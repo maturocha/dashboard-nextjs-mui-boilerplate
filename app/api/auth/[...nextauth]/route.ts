@@ -62,7 +62,7 @@ const handler = NextAuth({
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (token) {
-        session.accessToken = token.accessToken;
+        session.accessToken = token.accessToken as string;
       }
       return session;
     },
