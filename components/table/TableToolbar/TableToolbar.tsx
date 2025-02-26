@@ -34,6 +34,12 @@ interface TableToolbarProps {
     searchTextDefault?: string;
 }
 
+interface ActiveFilter {
+    key: string;
+    label: string;
+    optionName: string;
+}
+
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
@@ -65,14 +71,20 @@ const TableToolbar = ({
         setOpenSearchModal((prev) => !prev);
     }, []);
 
-    const activeFilters = useMemo(() => {
+    const activeFilters = useMemo((): ActiveFilter[] => {
         return Object.entries(filters)
-            .map(([key, value]) => {
+            .map(([key, value]): ActiveFilter | null => {
                 const filterItem = fList?.find((item) => item.name === key);
                 const option = filterItem?.options.find((opt) => opt.id === Number(value));
-                return filterItem && option ? { key, label: filterItem.label, optionName: option.name } : null;
+                return filterItem && option 
+                    ? { 
+                        key, 
+                        label: filterItem.label, 
+                        optionName: option.name 
+                    } 
+                    : null;
             })
-            .filter(Boolean);
+            .filter((item): item is ActiveFilter => item !== null);
     }, [filters, fList]);
 
     return (
