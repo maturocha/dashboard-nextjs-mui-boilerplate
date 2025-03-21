@@ -16,6 +16,7 @@ const MainWrapper = styled("div")(() => ({
   display: "flex",
   minHeight: "100vh",
   width: "100%",
+  padding: "20px",
 }));
 
 const PageWrapper = styled("div")(() => ({
@@ -68,15 +69,32 @@ export default function RootLayout({
                 <Container
                   sx={{
                     paddingTop: "20px",
-                    maxWidth: "1200px",
+                    maxWidth: {
+                      xs: '100%',
+                      sm: '540px',
+                      md: '720px',
+                      lg: '100%',
+                    },
                     px: {
                       xs: 2,
-                      lg: 0
-                    }
+                      sm: 3,
+                      lg: 4
+                    },
+                    ml: 0,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    width: '100%'
                   }}
                 >
-                  {/* Page Route */}
-                  <Box sx={{ minHeight: "calc(100vh - 170px)" }}>{children}</Box>
+                  <Box 
+                    sx={{ 
+                      minHeight: "calc(100vh - 120px)",
+                      width: '100%',
+                      overflowX: 'hidden'
+                    }}
+                  >
+                    {children}
+                  </Box>
                 </Container>
                 
                   <StyledFab 

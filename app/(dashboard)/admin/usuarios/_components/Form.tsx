@@ -1,4 +1,4 @@
-'use client' // Asegura que el componente se renderice solo en el cliente
+'use client'
 
 import { useState, useEffect } from 'react'
 import { Formik, Form, FormikProps } from 'formik'

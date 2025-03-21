@@ -14,8 +14,13 @@ export const views = {
   update: '/admin/usuarios/:id/editar',
 }
 
+export const labels = {
+  plural: 'Usuarios',
+  singular: 'Usuario'
+}
+
 export const columnsTable = [
-  { name: 'Name', property: 'name', sort: true },
+  { name: 'Nombre', property: 'name', sort: true },
   { name: 'Email', property: 'email', sort: true },
   { name: 'Rol', property: 'rol', sort: true },
   {

@@ -71,13 +71,13 @@ const Menuitems = [
     href: "/admin/usuarios",
     role: "admin",
   },
-  // {
-  //   id: uniqueId(),
-  //   title: "Categorías",
-  //   icon: IconCategory,
-  //   href: "/admin/categorias",
-  //   role: "admin",
-  // },
+  {
+    id: uniqueId(),
+    title: "Categorías",
+    icon: IconCategory,
+    href: "/admin/categorias",
+    role: "admin",
+  },
   // {
   //   id: uniqueId(),
   //   title: "Barrios",

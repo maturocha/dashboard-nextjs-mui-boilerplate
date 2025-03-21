@@ -3,22 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, Typography, Container } from '@mui/material'
-import { UserForm } from '@/app/(dashboard)/admin/usuarios/_components/Form'
-import { FormValues, api, labels, views } from '@/models/User'
+import { CategoryForm } from '@/app/(dashboard)/admin/categorias/_components/Form'
+import { FormValues, api, views } from '@/models/Category'
 import { apiWrapper } from '@/utils/api/apiWrapper'
 import { FormikHelpers } from 'formik'
 import { useAppContext } from '@/context/AppContext'
+import { labels } from '@/models/Category'
 
 
 const defaultValues: FormValues = {
-  name: '',
-  email: '',
-  role_id: '',
-  password: '',
-  cel: '',
+  name: ''
 }
 
-export default function CreateUserPage() {
+export default function CreateCategoryPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { showToast } = useAppContext();
@@ -34,12 +31,12 @@ export default function CreateUserPage() {
       
       const response = await apiWrapper.post(api.create, values);
 
-      showToast(`Usuario ${response.name} creado correctamente`, 'success');
+      showToast(`${labels.singular} ${response.name} creada correctamente`, 'success');
       router.push(views.list);
       
     } catch (error: any) {
-      const errors = error.errors || { general: 'Error al crear el usuario' };
-      showToast('Error al crear el usuario', 'error');
+      const errors = error.errors || { general: 'Error en la creación' };
+      showToast('Error en la creación', 'error');
       setErrors(errors);
     } finally {
       setSubmitting(false);
@@ -52,13 +49,12 @@ export default function CreateUserPage() {
         
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Typography variant="h4" component="h1" align="center" gutterBottom>
-              Nuevo {labels.singular}
+              Nueva {labels.singular}
             </Typography>
             
-            <UserForm 
+            <CategoryForm 
               values={defaultValues}
               handleSubmit={handleSubmit}
-              isCreating={true}
             />
           </Box>
         

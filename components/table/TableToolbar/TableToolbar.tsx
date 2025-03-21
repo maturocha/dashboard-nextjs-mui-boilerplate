@@ -1,149 +1,150 @@
 import { useState, useCallback, useMemo } from 'react';
 import { styled } from '@mui/material/styles';
 import {
-    InputLabel,
-    FormControl,
-    Select,
-    IconButton,
     Chip,
     Toolbar,
     Box,
-    Typography,
-    Button,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    FormHelperText,
+    Button
 } from '@mui/material';
-import { FilterList as FilterListIcon } from '@mui/icons-material';
-import { Search } from './Search';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import FilterModal from './FilterModal';
+import ToolbarActions from './ToolbarActions';
+import { ActiveFilter, TableToolbarProps } from '@/types/table';
 
-interface TableToolbarProps {
-    exportButton?: string;
-    filters?: Record<string, any>;
-    onFilter?: (filter: { name: string; value: any }) => void;
-    onFilterRemove?: (filter: string) => void;
-    onSearch?: (text: string) => void;
-    fList?: Array<{
-        label: string;
-        name: string;
-        info?: string;
-        options: Array<{ id: number; name: string }>;
-    }>;
-    hasSearch?: boolean;
-    searchTextDefault?: string;
-}
-
-interface ActiveFilter {
-    key: string;
-    label: string;
-    optionName: string;
-}
+const ActiveFilterChips = ({ 
+    filters, 
+    onFilterRemove 
+}: { 
+    filters: ActiveFilter[], 
+    onFilterRemove?: (filter: string) => void 
+}) => (
+    <Box 
+        sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 1, 
+            p: 1 
+        }}
+    >
+        {filters.map(({ key, label, optionName }) => (
+            <Chip
+                key={key}
+                label={`${label}: ${optionName}`}
+                onDelete={() => onFilterRemove?.(key)}
+                color="primary"
+                variant="outlined"
+                sx={{ m: 0.5 }}
+            />
+        ))}
+    </Box>
+);
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
     display: 'flex',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing(1),
+    gap: theme.spacing(2),
     flexWrap: 'wrap',
-    gap: theme.spacing(1),
-    '& .filter': {
-        display: 'flex',
-        alignItems: 'center',
-        margin: theme.spacing(0.5),
-    },
-    '& .filterName': {
-        marginRight: theme.spacing(0.5),
-    },
+    borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 const TableToolbar = ({
     exportButton,
-    filters = {},
+    filters,
     onFilter,
     onFilterRemove,
     onSearch,
-    fList,
+    filteredList,
     searchTextDefault = '',
-    hasSearch = false,
+    hasSearch = false
 }: TableToolbarProps) => {
+
+    console.log(filters)
     const [openSearchModal, setOpenSearchModal] = useState(false);
     
     const handleToggleSearchModal = useCallback(() => {
         setOpenSearchModal((prev) => !prev);
     }, []);
 
+    const handleFilter = useCallback((filterData: { name: string; value: any }) => {
+        onFilter?.(filterData);
+        setOpenSearchModal(false);
+    }, [onFilter]);
+
     const activeFilters = useMemo((): ActiveFilter[] => {
-        return Object.entries(filters)
-            .map(([key, value]): ActiveFilter | null => {
-                const filterItem = fList?.find((item) => item.name === key);
-                const option = filterItem?.options.find((opt) => opt.id === Number(value));
-                return filterItem && option 
-                    ? { 
-                        key, 
-                        label: filterItem.label, 
-                        optionName: option.name 
-                    } 
-                    : null;
-            })
-            .filter((item): item is ActiveFilter => item !== null);
-    }, [filters, fList]);
+        if (!filteredList || !filters) return [];
+        
+        return Object.entries(filters).reduce<ActiveFilter[]>((acc, [key, value]) => {
+            if (!value) return acc;
+            
+            const filterItem = filteredList.find((item) => item.name === key);
+            const option = filterItem?.options.find((opt) => opt.id === Number(value));
+            
+            if (filterItem && option) {
+                acc.push({
+                    key,
+                    label: filterItem.label,
+                    optionName: option.name
+                });
+            }
+            return acc;
+        }, []);
+    }, [filters, filteredList]);
 
     return (
-        <>
+        <Box>
             <StyledToolbar>
-                <Box display="flex" alignItems="center" gap={1}>
-                    {exportButton && (
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL}${exportButton}`, '_blank')}
-                        >
-                            Exportar a Excel
-                        </Button>
-                    )}
-                    {hasSearch && onSearch && <Search handleSearch={onSearch} searchTextDefault={searchTextDefault} />}
+                <Box sx={{ flex: 1 }}>
+                    {activeFilters.length > 0 ? (
+                        <ActiveFilterChips 
+                            filters={activeFilters} 
+                            onFilterRemove={onFilterRemove} 
+                        />
+                    ) : null}
                 </Box>
-                <IconButton aria-label="Filtrar" onClick={handleToggleSearchModal}>
-                    <FilterListIcon />
-                </IconButton>
+                <Box 
+                    sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        ml: 'auto' 
+                    }}
+                >
+                    <ToolbarActions 
+                        exportButton={exportButton}
+                        hasSearch={hasSearch}
+                        onSearch={onSearch}
+                        searchTextDefault={searchTextDefault}
+                    />
+                    <Button
+                        variant="outlined"
+                        size="medium"
+                        disabled={filters ? false : true}
+                        startIcon={<FilterAltIcon />}
+                        onClick={handleToggleSearchModal}
+                        aria-label="Abrir filtros"
+                        sx={{
+                            minWidth: 'auto',
+                            gap: 1,
+                            textTransform: 'none',
+                            borderRadius: 1,
+                            px: 2
+                        }}
+                    >
+                        Filtros
+                    </Button>
+                </Box>
             </StyledToolbar>
 
-            <Dialog open={openSearchModal} onClose={handleToggleSearchModal} aria-labelledby="form-dialog-title">
-                <DialogTitle>Filtrado</DialogTitle>
-                <DialogContent>
-                    {fList?.map((item) => (
-                        <Box display="flex" p={1} key={item.name}>
-                            <FormControl fullWidth>
-                                <InputLabel>{item.label}</InputLabel>
-                                <Select
-                                    native
-                                    defaultValue=""
-                                    onChange={(e) => onFilter?.({ name: item.name, value: e.target.value })}
-                                >
-                                    <option aria-label="None" value="" />
-                                    {item.options.map((option) => (
-                                        <option key={option.id} value={option.id}>
-                                            {option.name}
-                                        </option>
-                                    ))}
-                                </Select>
-                                <FormHelperText>{item.info}</FormHelperText>
-                            </FormControl>
-                        </Box>
-                    ))}
-                </DialogContent>
-            </Dialog>
-
-            {activeFilters.length > 0 && (
-                <StyledToolbar>
-                    {activeFilters.map(({ key, label, optionName }) => (
-                        <Box key={key} className="filter">
-                            <Typography className="filterName">{label}</Typography>
-                            <Chip label={optionName} onDelete={() => onFilterRemove?.(key)} />
-                        </Box>
-                    ))}
-                </StyledToolbar>
-            )}
-        </>
+            {filters && <FilterModal 
+                open={openSearchModal}
+                onClose={handleToggleSearchModal}
+                filteredList={filteredList}
+                filters={filters}
+                onFilter={handleFilter}
+            />}
+        </Box>
     );
 };
 

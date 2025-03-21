@@ -16,7 +16,6 @@ import {
 } from "@mui/material";
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import Link from "next/link";
 
 interface LoginType {
   title?: string;
@@ -57,8 +56,6 @@ const AuthLogin = ({ title, subtitle, loading, message }: LoginType) => {
         redirect: false
       });
 
-      console.log(result);
-
       if (result?.error) {
         // Manejar error
         console.error(result.error);
@@ -91,7 +88,7 @@ const AuthLogin = ({ title, subtitle, loading, message }: LoginType) => {
       >
         {({ values, handleChange, errors, touched, isSubmitting }) => (
           <Form autoComplete="off">
-            <Stack spacing={3}>
+            <Stack spacing={2}>
               <Box>
                 <Typography
                   variant="subtitle1"
@@ -108,6 +105,7 @@ const AuthLogin = ({ title, subtitle, loading, message }: LoginType) => {
                   name="username"
                   value={values.username}
                   onChange={handleChange}
+                  onFocus={() => setError('')}
                   error={touched.username && !!errors.username}
                   helperText={touched.username && errors.username}
                   placeholder="usuario@ejemplo.com"
@@ -131,6 +129,7 @@ const AuthLogin = ({ title, subtitle, loading, message }: LoginType) => {
                   type={passwordVisible ? 'text' : 'password'}
                   value={values.password}
                   onChange={handleChange}
+                  onFocus={() => setError('')}
                   error={touched.password && !!errors.password}
                   helperText={touched.password && errors.password}
                   InputProps={{
@@ -150,7 +149,7 @@ const AuthLogin = ({ title, subtitle, loading, message }: LoginType) => {
 
               <Box>
                 {error && (
-                  <Typography color="error" mb={2}>
+                  <Typography color="error">
                     {error}
                   </Typography>
                 )}
@@ -164,7 +163,7 @@ const AuthLogin = ({ title, subtitle, loading, message }: LoginType) => {
                 fullWidth
                 disabled={isSubmitting || loading}
               >
-                {loading ? 'Cargando...' : 'Iniciar sesión'}
+                {loading ? 'Cargando...' : 'Ingresar'}
               </Button>
             </Stack>
           </Form>

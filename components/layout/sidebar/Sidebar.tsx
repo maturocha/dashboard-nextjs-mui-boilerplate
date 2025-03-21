@@ -1,8 +1,29 @@
-import { useMediaQuery, Box, Drawer } from "@mui/material";
+import { useMediaQuery, Box, Drawer, Theme } from "@mui/material";
 import SidebarItems from "./SidebarItems";
 import { Sidebar, Logo } from 'react-mui-sidebar';
 
-interface ItemType {
+// Constants
+const SIDEBAR_CONFIG = {
+  width: '240px',
+  mobileWidth: '270px',
+  collapseWidth: '80px',
+  themeColor: '#5d87ff',
+  secondaryColor: '#49beff',
+} as const;
+
+// Custom scrollbar styles
+const scrollbarStyles = {
+  '&::-webkit-scrollbar': {
+    width: '7px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: '#eff2f7',
+    borderRadius: '15px',
+  },
+} as const;
+
+// Improved TypeScript interface
+interface SidebarProps {
   isMobileSidebarOpen: boolean;
   onSidebarClose: (event: React.MouseEvent<HTMLElement>) => void;
   isSidebarOpen: boolean;
@@ -12,35 +33,40 @@ const MSidebar = ({
   isMobileSidebarOpen,
   onSidebarClose,
   isSidebarOpen,
-}: ItemType) => {
-  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
+}: SidebarProps) => {
+  const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up("lg"));
 
-  const sidebarWidth = "270px";
-
-  // Custom CSS for short scrollbar
-  const scrollbarStyles = {
-    '&::-webkit-scrollbar': {
-      width: '7px',
-
-    },
-    '&::-webkit-scrollbar-thumb': {
-      backgroundColor: '#eff2f7',
-      borderRadius: '15px',
-    },
-  };
-
+  const SidebarContent = () => (
+    <Sidebar
+      width={lgUp ? SIDEBAR_CONFIG.width : SIDEBAR_CONFIG.mobileWidth}
+      collapsewidth={SIDEBAR_CONFIG.collapseWidth}
+      open={isSidebarOpen}
+      isCollapse={!lgUp ? false : undefined}
+      mode="light"
+      direction="ltr"
+      themeColor={SIDEBAR_CONFIG.themeColor}
+      themeSecondaryColor={SIDEBAR_CONFIG.secondaryColor}
+      showProfile={false}
+      aria-label="Main sidebar navigation"
+    >
+      <Logo 
+        img="/images/logos/dark-logo.svg" 
+        alt="Application logo"
+      />
+      <Box role="navigation">
+        <SidebarItems onItemClick={onSidebarClose} />
+      </Box>
+    </Sidebar>
+  );
 
   if (lgUp) {
     return (
       <Box
         sx={{
-          width: sidebarWidth,
+          width: SIDEBAR_CONFIG.width,
           flexShrink: 0,
         }}
       >
-        {/* ------------------------------------------- */}
-        {/* Sidebar for desktop */}
-        {/* ------------------------------------------- */}
         <Drawer
           anchor="left"
           open={isSidebarOpen}
@@ -52,33 +78,8 @@ const MSidebar = ({
             },
           }}
         >
-          {/* ------------------------------------------- */}
-          {/* Sidebar Box */}
-          {/* ------------------------------------------- */}
-          <Box
-            sx={{
-              height: "100%",
-            }}
-          >
-            <Sidebar
-              width={'220px'}
-              collapsewidth="80px"
-              open={isSidebarOpen}
-              themeColor="#5d87ff"
-              themeSecondaryColor="#49beff"
-              showProfile={false}
-            >
-              {/* ------------------------------------------- */}
-              {/* Logo */}
-              {/* ------------------------------------------- */}
-              <Logo img="/images/logos/dark-logo.svg" />
-              <Box>
-                {/* ------------------------------------------- */}
-                {/* Sidebar Items */}
-                {/* ------------------------------------------- */}
-                <SidebarItems />
-              </Box>
-            </Sidebar >
+          <Box sx={{ height: "100%" }}>
+            <SidebarContent />
           </Box>
         </Drawer>
       </Box>
@@ -98,34 +99,9 @@ const MSidebar = ({
         },
       }}
     >
-      {/* ------------------------------------------- */}
-      {/* Sidebar Box */}
-      {/* ------------------------------------------- */}
       <Box px={2}>
-        <Sidebar
-          width={'270px'}
-          collapsewidth="80px"
-          isCollapse={false}
-          mode="light"
-          direction="ltr"
-          themeColor="#5d87ff"
-          themeSecondaryColor="#49beff"
-          showProfile={false}
-        >
-          {/* ------------------------------------------- */}
-          {/* Logo */}
-          {/* ------------------------------------------- */}
-          <Logo img="/images/logos/dark-logo.svg" />
-          {/* ------------------------------------------- */}
-          {/* Sidebar Items */}
-          {/* ------------------------------------------- */}
-          <SidebarItems />
-        </Sidebar>
+        <SidebarContent />
       </Box>
-      {/* ------------------------------------------- */}
-      {/* Sidebar For Mobile */}
-      {/* ------------------------------------------- */}
-
     </Drawer>
   );
 };

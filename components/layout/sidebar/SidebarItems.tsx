@@ -5,7 +5,11 @@ import { Box, List } from "@mui/material";
 import NavItem from "./NavItem";
 import NavGroup from "./NavGroup/NavGroup";
 
-const SidebarItems = ({ toggleMobileSidebar }: any) => {
+interface SidebarItemsProps {
+  onItemClick: (event: React.MouseEvent<HTMLElement>) => void;
+}
+
+const SidebarItems = ({ onItemClick }: SidebarItemsProps) => {
   const pathname = usePathname();
   const pathDirect = pathname;
 
@@ -25,7 +29,7 @@ const SidebarItems = ({ toggleMobileSidebar }: any) => {
                 item={item}
                 key={item.id}
                 pathDirect={pathDirect}
-                onClick={toggleMobileSidebar}
+                onClick={onItemClick}
               />
             );
           }

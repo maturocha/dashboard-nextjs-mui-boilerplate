@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface UseListOptions<TFilters> {
@@ -21,23 +21,32 @@ export const useList = <TFilters extends Record<string, any>>({
   defaultPagination = { page: 1, perPage: 10 },
   fetchData,
 }: UseListOptions<TFilters>) => {
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  // Memoize default values to prevent unnecessary recreations
+  const defaultValues = useMemo(() => ({
+    sorting: defaultSorting,
+    pagination: { ...defaultPagination, total: 0 },
+    filters: {} as TFilters,
+  }), []);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({
-    ...defaultPagination,
-    total: 0,
-  });
-  const [sorting, setSorting] = useState(defaultSorting);
-  const [filters, setFilters] = useState<TFilters>({} as TFilters);
+  const [pagination, setPagination] = useState(defaultValues.pagination);
+  const [sorting, setSorting] = useState(defaultValues.sorting);
+  const [filters, setFilters] = useState(defaultValues.filters);
 
-  // Recuperar parámetros de la URL y sincronizarlos con el estado SOLO una vez al montar
+  const didMount = useRef(false);
+  const prevFetchParams = useRef<string | null>(null);
+  const initialized = useRef(false);
+
+  // Extraer valores iniciales de la URL
   useEffect(() => {
+    if (initialized.current) return;
+
     const params = new URLSearchParams(searchParams.toString());
 
     const page = parseInt(params.get("page") || String(defaultPagination.page), 10);
@@ -52,55 +61,73 @@ export const useList = <TFilters extends Record<string, any>>({
       }
     });
 
-    setPagination(prev => ({ ...prev, page, perPage }));
+    setPagination({ page, perPage, total: 0 });
     setSorting({ by: sortBy, type: sortType });
     setFilters(initialFilters);
-  }, [searchParams]); // Depende de searchParams para sincronizar al montar o cambiar
 
-  // Extraer la función de fetch a una referencia memoizada
+    initialized.current = true;
+  }, [searchParams, defaultPagination, defaultSorting]);
+
+  // Memoriza los parámetros de consulta
+  const fetchParams = useMemo(() => ({
+    page: pagination.page,
+    perPage: pagination.perPage,
+    sortBy: sorting.by,
+    sortType: sorting.type,
+    filters,
+  }), [pagination.page, pagination.perPage, sorting.by, sorting.type, filters]);
+
+  // Optimized doFetch function
   const doFetch = useCallback(async (abortController?: AbortController) => {
+    if (!initialized.current) return;
+
+    const currentParams = JSON.stringify(fetchParams);
+    if (prevFetchParams.current === currentParams) return;
+    prevFetchParams.current = currentParams;
+
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetchData({
-        page: pagination.page,
-        perPage: pagination.perPage,
-        sortBy: sorting.by,
-        sortType: sorting.type,
-        filters,
-        signal: abortController?.signal,
+      const response = await fetchData({ ...fetchParams, signal: abortController?.signal });
+      
+      // Batch state updates
+      const newState = {
+        data: response.data,
+        pagination: { ...pagination, total: response.total }
+      };
+      
+      // Create URL params outside of state updates
+      const params = new URLSearchParams({
+        page: String(fetchParams.page),
+        perPage: String(fetchParams.perPage),
+        sortBy: fetchParams.sortBy,
+        sortType: fetchParams.sortType,
+        ...Object.fromEntries(
+          Object.entries(fetchParams.filters)
+            .filter(([_, value]) => value)
+            .map(([key, value]) => [key, String(value)])
+        )
       });
 
-      setData(response.data);
-      setPagination(prev => ({ ...prev, total: response.total }));
-
-      // Actualizar URL sin causar un re-render
-      const params = new URLSearchParams();
-      params.set("page", String(pagination.page));
-      params.set("perPage", String(pagination.perPage));
-      params.set("sortBy", sorting.by);
-      params.set("sortType", sorting.type);
-
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.set(key, String(value));
-      });
-
-      if (searchParams.toString() !== params.toString()) {
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      }
+      // Batch updates
+      setData(newState.data);
+      setPagination(newState.pagination);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
+      if (err.name !== "AbortError") {
         console.error("Error fetching list:", err);
         setError("Hubo un problema al cargar los datos.");
       }
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.perPage, sorting.by, sorting.type, filters, pathname, router, searchParams, fetchData]);
+  }, [fetchParams, pathname, router, fetchData, pagination]);
 
-  // Efecto principal que usa doFetch
+  // Llamar a `doFetch` solo cuando los valores están listos
   useEffect(() => {
+    if (!initialized.current) return;
+
     const abortController = new AbortController();
     const debounceTimer = setTimeout(() => {
       doFetch(abortController);
@@ -112,14 +139,15 @@ export const useList = <TFilters extends Record<string, any>>({
     };
   }, [doFetch]);
 
-  // Método público para refetch manual
+  // Método para hacer fetch manualmente
   const refetch = useCallback(() => {
     return doFetch();
   }, [doFetch]);
 
+  // Optimized handleSearching
   const handleSearching = useCallback((value: string) => {
-    setFilters(prev => ({ ...prev, search: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setFilters(prev => prev.search === value ? prev : { ...prev, search: value });
+    setPagination(prev => prev.page === 1 ? prev : { ...prev, page: 1 });
   }, []);
 
   return {
