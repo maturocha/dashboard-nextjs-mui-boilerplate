@@ -34,30 +34,24 @@ const Menuitems = [
   //   href: "/productos",
   // },
   // {
-  //   id: uniqueId(),
-  //   title: "Pedidos",
-  //   icon: IconShoppingCart,
-  //   href: "/pedidos",
-  // },
+    //   id: uniqueId(),
+    //   title: "Clientes",
+    //   icon: IconCustomers,
+    //   href: "/clientes",
+    // },
   // {
-  //   id: uniqueId(),
-  //   title: "Clientes",
-  //   icon: IconCustomers,
-  //   href: "/clientes",
+    //   id: uniqueId(),
+    //   title: "Listados",
+    //   icon: IconList,
+    //   href: "/listados",
+    // },
+    // {
+      //   id: uniqueId(),
+      //   title: "Recaudaciones",
+      //   icon: IconCash,
+      //   href: "/recaudaciones",
   // },
-  // {
-  //   id: uniqueId(),
-  //   title: "Listados",
-  //   icon: IconList,
-  //   href: "/listados",
-  // },
-  // {
-  //   id: uniqueId(),
-  //   title: "Recaudaciones",
-  //   icon: IconCash,
-  //   href: "/recaudaciones",
-  // },
-
+  
   // Admin only section
   {
     navlabel: true,
@@ -77,6 +71,13 @@ const Menuitems = [
     icon: IconCategory,
     href: "/admin/categorias",
     role: "admin",
+  },
+  {
+     id: uniqueId(),
+     title: "Pedidos",
+     icon: IconShoppingCart,
+     href: "/admin/pedidos",
+     role: "admin",
   },
   // {
   //   id: uniqueId(),

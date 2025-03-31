@@ -50,66 +50,66 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <SessionProvider>
-          <AppProvider>
-            <ThemeProvider theme={baselightTheme}>
-              <CssBaseline />
+        <ThemeProvider theme={baselightTheme}>
+          <CssBaseline />
+          <SessionProvider>
+            <AppProvider>
               <MainWrapper className="mainwrapper">
-              {/* Sidebar */}
-              <Sidebar
-                isSidebarOpen={isSidebarOpen}
-                isMobileSidebarOpen={isMobileSidebarOpen}
-                onSidebarClose={() => setMobileSidebarOpen(false)}
-              />
-              {/* Main Wrapper */}
-              <PageWrapper className="page-wrapper">
-                {/* Header */}
-                <Header toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
-                {/* PageContent */}
-                <Container
-                  sx={{
-                    paddingTop: "20px",
-                    maxWidth: {
-                      xs: '100%',
-                      sm: '540px',
-                      md: '720px',
-                      lg: '100%',
-                    },
-                    px: {
-                      xs: 2,
-                      sm: 3,
-                      lg: 4
-                    },
-                    ml: 0,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    width: '100%'
-                  }}
-                >
-                  <Box 
-                    sx={{ 
-                      minHeight: "calc(100vh - 120px)",
-                      width: '100%',
-                      overflowX: 'hidden'
+                {/* Sidebar */}
+                <Sidebar
+                  isSidebarOpen={isSidebarOpen}
+                  isMobileSidebarOpen={isMobileSidebarOpen}
+                  onSidebarClose={() => setMobileSidebarOpen(false)}
+                />
+                {/* Main Wrapper */}
+                <PageWrapper className="page-wrapper">
+                  {/* Header */}
+                  <Header toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
+                  {/* PageContent */}
+                  <Container
+                    sx={{
+                      paddingTop: "20px",
+                      maxWidth: {
+                        xs: '100%',
+                        sm: '540px',
+                        md: '720px',
+                        lg: '100%',
+                      },
+                      px: {
+                        xs: 2,
+                        sm: 3,
+                        lg: 4
+                      },
+                      ml: 0,
+                      overflow: 'hidden',
+                      position: 'relative',
+                      width: '100%'
                     }}
                   >
-                    {children}
-                  </Box>
-                </Container>
-                
+                    <Box 
+                      sx={{ 
+                        minHeight: "calc(100vh - 120px)",
+                        width: '100%',
+                        overflowX: 'hidden'
+                      }}
+                    >
+                      {children}
+                    </Box>
+                  </Container>
+                  
                   <StyledFab 
                     color='inherit'
                     onClick={() => router.push('/create')}
                   >
                     <AddCircleOutlineRounded />
                   </StyledFab>
-                
-              </PageWrapper>
-            </MainWrapper>
-            <GlobalModal />
-          </ThemeProvider>
-        </AppProvider>
-        </SessionProvider>
+                  
+                </PageWrapper>
+              </MainWrapper>
+              <GlobalModal />
+            </AppProvider>
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
