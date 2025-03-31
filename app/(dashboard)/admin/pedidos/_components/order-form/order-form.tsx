@@ -18,6 +18,7 @@ import {
   InputAdornment,
   IconButton,
 } from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -79,6 +80,15 @@ export default function OrderForm() {
     if (name === 'discount' || name === 'delivery_cost') {
       calculateTotal(false);
     }
+  };
+
+  // Función específica para manejar los cambios en campos Select
+  const handleSelectChange = (e: SelectChangeEvent) => {
+    const { name, value } = e.target;
+    setOrder({
+      ...order,
+      [name as string]: value,
+    });
   };
 
   const calculateTotal = (calculateDeliveryCost = true) => {
@@ -225,7 +235,7 @@ export default function OrderForm() {
                   labelId="payment-method-label"
                   name="payment_method"
                   value={order.payment_method}
-                  onChange={handleOrderFieldChange}
+                  onChange={handleSelectChange}
                   label="Método de pago"
                 >
                   <MenuItem value="">No definido</MenuItem>

@@ -64,8 +64,8 @@ export default function CreateOrderPage() {
   // Calcular totales basados en los items
   const subtotal = orderItems.reduce((sum, item) => {
     // Asegurarse de que precio y cantidad sean números
-    const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0;
-    const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : item.quantity || 0;
+    const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+    const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : (item.quantity || 0);
     
     // Calcular el subtotal directamente multiplicando precio por cantidad
     const itemSubtotal = price * quantity;
@@ -134,12 +134,12 @@ export default function CreateOrderPage() {
         // Si ya existe, aumentar la cantidad
         const updatedItems = [...orderItems];
         const item = updatedItems[existingIndex];
-        const newQuantity = Number(item.quantity) + 1;
+        const newQuantity = (typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : (item.quantity || 0)) + 1;
         
         // Convertir precio a número si es una cadena
         const itemPrice = typeof item.price === 'string'
           ? parseFloat(item.price)
-          : Number(item.price);
+          : (item.price || 0);
         
         // Calcular el subtotal como precio * cantidad
         const subtotalValue = itemPrice * newQuantity;
@@ -288,8 +288,8 @@ export default function CreateOrderPage() {
       // Preparar los items con el formato esperado por el backend
       const formattedItems = orderItems.map(item => {
         // Asegurar que los valores numéricos sean números y no strings
-        const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : item.quantity;
-        const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+        const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : (item.quantity || 0);
+        const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
         const subtotal = quantity * price;
         
         return {

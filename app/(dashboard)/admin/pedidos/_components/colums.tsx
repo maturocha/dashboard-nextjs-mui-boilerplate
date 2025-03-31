@@ -4,7 +4,7 @@ import { GridColDef } from '@mui/x-data-grid';
 import { Chip, Box, IconButton, Tooltip, Typography } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
-import { Order, paymentMethodLabels, statusLabels, statusColors, OrderStatus } from './data-table/schema';
+import { Order, paymentMethodLabels, statusLabels, statusColors, OrderStatus } from '@/types/orders';
 
 export const columns: GridColDef[] = [
   { 

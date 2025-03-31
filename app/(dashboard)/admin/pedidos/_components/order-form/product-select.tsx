@@ -38,11 +38,17 @@ export default function ProductSelect({ onAddProduct, customerType }: ProductSel
   const [loading, setLoading] = useState(false);
 
   // Obtener el precio apropiado según el tipo de cliente
-  const getPrice = (product: Product | null) => {
+  const getPrice = (product: Product | null): number => {
     if (!product) return 0;
     // Aquí se podría implementar lógica para precios diferentes según tipo de cliente
     // si la API lo soporta
-    return product.price || 0;
+    const price = product.price;
+    
+    if (typeof price === 'string') {
+      return parseFloat(price) || 0;
+    }
+    
+    return price || 0;
   };
 
   // Calcular precio final

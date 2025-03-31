@@ -447,9 +447,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           {(() => {
                             // Asegurar que cantidad y precio son valores numéricos
                             const quantity = typeof item.quantity === 'string' ? 
-                              parseInt(item.quantity, 10) : Number(item.quantity || 0);
+                              parseInt(item.quantity, 10) : (item.quantity || 0);
                             const price = typeof item.price === 'string' ? 
-                              parseFloat(item.price) : Number(item.price || item.price_unit || 0);
+                              parseFloat(item.price) : (item.price || item.price_unit || 0);
                             
                             // Usar el subtotal existente si está definido, o calcularlo
                             const subtotal = item.subtotal || item.price_final || (quantity * price);

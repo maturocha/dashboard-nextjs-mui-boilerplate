@@ -144,34 +144,23 @@ export default function ProductSelector({ value, onChange, disabled = false }: P
           }}
         />
       )}
-      renderOption={(props, option) => {
-        // Extraer la key del objeto props
-        const { key, ...otherProps } = props;
-        
-        return (
-          <li key={key} {...otherProps}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <Typography variant="body1">{option.name}</Typography>
-                <Typography variant="body2" fontWeight="bold" color="primary">
-                  {/* Mostrar precio tal como viene del backend */}
-                  {`$${option.price_min || option.price_unit || option.price || 0}`}
-                </Typography>
-              </Box>
-              {option.sku && (
-                <Typography variant="caption" color="text.secondary">
-                  SKU: {option.sku}
-                </Typography>
-              )}
-              {option.code_miyi && (
-                <Typography variant="caption" color="text.secondary">
-                  Código: {option.code_miyi}
-                </Typography>
-              )}
+      renderOption={(props, option) => (
+        <li {...props}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="body1">{option.name}</Typography>
+              <Typography variant="body2" color="primary.main" fontWeight="bold">
+                ${option.price || option.price_min || '0.00'}
+              </Typography>
             </Box>
-          </li>
-        );
-      }}
+            {option.description && (
+              <Typography variant="caption" color="text.secondary">
+                {option.description}
+              </Typography>
+            )}
+          </Box>
+        </li>
+      )}
     />
   );
 } 

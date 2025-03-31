@@ -29,8 +29,15 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PageContainer from '@/components/container/PageContainer';
 import OrderService from '@/utils/api/services/orderService';
-import { Order, statusLabels, paymentMethodLabels } from '@/types/orders';
+import { statusLabels, paymentMethodLabels, OrderItem, OrderStatus, PaymentMethod, Order } from '@/types/orders';
 import { SelectChangeEvent } from '@mui/material';
+
+// Interfaz extendida para los items de pedido como llegan desde la API
+interface ExtendedOrderItem extends OrderItem {
+  id?: string;
+  id_product?: string;
+  name?: string;
+}
 
 export default function EditOrderPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -51,7 +58,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
     status: 'pending',
     payment_method: 'ef',
     notes: '',
-    items: [],
+    items: [] as ExtendedOrderItem[],
     details: []
   });
   
@@ -200,7 +207,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
   
   // Manejar cambios en los productos
   const handleItemChange = (index: number, field: string, value: any) => {
-    const items = [...(formData.items || [])];
+    const items = [...(formData.items || [])] as ExtendedOrderItem[];
     items[index] = {
       ...items[index],
       [field]: value
@@ -208,19 +215,37 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
     
     // Recalcular el subtotal del ítem
     if (field === 'quantity' || field === 'price' || field === 'price_unit') {
-      // Asegurar que la cantidad sea un número entero
-      const quantity = field === 'quantity' 
-        ? (typeof value === 'string' ? parseInt(value, 10) : Number(value)) 
-        : (typeof items[index].quantity === 'string' 
-            ? parseInt(items[index].quantity, 10) 
-            : Number(items[index].quantity || 0));
+      // Convertir los valores a números de manera segura
+      let quantity = 0;
+      let price = 0;
       
-      // Asegurar que el precio sea un número flotante
-      const price = field === 'price' || field === 'price_unit' 
-        ? (typeof value === 'string' ? parseFloat(value) : Number(value)) 
-        : (typeof items[index].price === 'string' 
-            ? parseFloat(items[index].price) 
-            : Number(items[index].price || items[index].price_unit || 0));
+      // Manejar cantidad
+      if (field === 'quantity') {
+        // Si se está actualizando la cantidad
+        quantity = typeof value === 'string' ? 
+          parseInt(value, 10) : 
+          Number(value || 0);
+      } else {
+        // Usar la cantidad existente
+        const qtyValue = items[index].quantity;
+        quantity = typeof qtyValue === 'string' ? 
+          parseInt(qtyValue, 10) : 
+          Number(qtyValue || 0);
+      }
+      
+      // Manejar precio
+      if (field === 'price' || field === 'price_unit') {
+        // Si se está actualizando el precio
+        price = typeof value === 'string' ? 
+          parseFloat(value) : 
+          Number(value || 0);
+      } else {
+        // Usar el precio existente
+        const priceValue = items[index].price || items[index].price_unit;
+        price = typeof priceValue === 'string' ? 
+          parseFloat(priceValue) : 
+          Number(priceValue || 0);
+      }
       
       // Recalcular subtotal con valores numéricos
       const subtotalValue = quantity * price;
@@ -260,7 +285,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
   };
   
   const handleRemoveItem = (index: number) => {
-    const items = [...(formData.items || [])];
+    const items = [...(formData.items || [])] as ExtendedOrderItem[];
     items.splice(index, 1);
     
     // Recalcular el total del pedido usando el mismo enfoque que handleItemChange
@@ -305,7 +330,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
     }
     
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -313,7 +338,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
     
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+      // No necesitamos setFormErrors aquí porque ya se establece dentro de validateForm
       return;
     }
     
@@ -346,10 +371,10 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
         : Number(formData.discount || 0);
       
       // Preparar los detalles del pedido con el formato esperado
-      const formattedItems = (formData.items || []).map(item => {
+      const formattedItems = (formData.items || []).map((item: ExtendedOrderItem) => {
         const quantity = typeof item.quantity === 'string' 
           ? parseInt(item.quantity, 10) 
-          : Number(item.quantity || 0);
+          : (item.quantity || 0);
           
         const price = typeof item.price === 'string' 
           ? parseFloat(item.price) 
@@ -563,8 +588,8 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
                             fullWidth
                             variant="outlined"
                             size="small"
-                            value={item.name || item.product_name || ''}
-                            onChange={(e) => handleItemChange(index, item.name ? 'name' : 'product_name', e.target.value)}
+                            value={(item as ExtendedOrderItem).name || item.product_name || ''}
+                            onChange={(e) => handleItemChange(index, (item as ExtendedOrderItem).name ? 'name' : 'product_name', e.target.value)}
                           />
                         </TableCell>
                         <TableCell align="center">

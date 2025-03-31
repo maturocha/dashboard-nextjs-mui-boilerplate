@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, TextField, Autocomplete, CircularProgress } from '@mui/material';
+import { Box, Typography, TextField, Autocomplete, CircularProgress, Chip } from '@mui/material';
 import { ClientService } from '@/utils/api/services';
 import { Client } from '@/types/clients';
 
@@ -65,24 +65,27 @@ export default function ClientSelect({ onSelect, selectedCustomer }: ClientSelec
           }}
         />
       )}
-      renderOption={(props, option) => {
-        const { key, ...listItemProps } = props;
-        return (
-          <li key={key} {...listItemProps}>
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="body1">
-                {option.name} 
-                {option.type === 'p' ? ' (Particular)' : ' (Mayorista)'}
-              </Typography>
-              {option.email && (
-                <Typography variant="body2" color="text.secondary">
-                  {option.email}
-                </Typography>
-              )}
+      renderOption={(props, option) => (
+        <li {...props}>
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <Typography variant="body1">{option.name}</Typography>
+              <Chip 
+                label={option.type === 'p' ? 'Particular' : 'Mayorista'}
+                size="small"
+                color={option.type === 'p' ? 'default' : 'primary'}
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.7rem' }}
+              />
             </Box>
-          </li>
-        );
-      }}
+            {option.email && (
+              <Typography variant="caption" color="text.secondary">
+                {option.email}
+              </Typography>
+            )}
+          </Box>
+        </li>
+      )}
     />
   );
 } 

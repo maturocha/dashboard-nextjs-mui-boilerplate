@@ -132,30 +132,27 @@ export default function ClientSelector({ value, onChange, error, helperText }: C
           }}
         />
       )}
-      renderOption={(props, option) => {
-        const { key, ...listItemProps } = props;
-        return (
-          <li key={key} {...listItemProps}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <Typography variant="body1">{option.name}</Typography>
-                <Chip
-                  label={option.type === 'p' ? 'Particular' : 'Mayorista'}
-                  size="small"
-                  color={option.type === 'p' ? 'default' : 'primary'}
-                  variant="outlined"
-                  sx={{ height: 20, fontSize: '0.7rem' }}
-                />
-              </Box>
-              {option.email && (
-                <Typography variant="caption" color="text.secondary">
-                  {option.email}
-                </Typography>
-              )}
+      renderOption={(props, option) => (
+        <li {...props}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <Typography variant="body1">{option.name}</Typography>
+              <Chip
+                label={option.type === 'p' ? 'Particular' : 'Mayorista'}
+                size="small"
+                color={option.type === 'p' ? 'default' : 'primary'}
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.7rem' }}
+              />
             </Box>
-          </li>
-        );
-      }}
+            {option.email && (
+              <Typography variant="caption" color="text.secondary">
+                {option.email}
+              </Typography>
+            )}
+          </Box>
+        </li>
+      )}
     />
   );
 } 
