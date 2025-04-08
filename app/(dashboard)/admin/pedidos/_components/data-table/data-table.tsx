@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import {
   Box,
-  Skeleton,
   TextField,
   InputAdornment,
   Button,
@@ -19,17 +18,34 @@ import {
   DialogContentText,
   DialogActions,
   Snackbar,
+  CircularProgress,
+  Paper,
+  Stack,
+  IconButton,
+  Divider,
+  TablePagination,
+  useMediaQuery,
+  Card,
+  CardContent
 } from '@mui/material';
 import {
   DataGrid,
-  GridLocaleText,
+  GridColDef,
+  GridPaginationModel,
 } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import CloseIcon from '@mui/icons-material/Close';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { getColumns } from './columns';
 import { statusLabels, paymentMethodLabels } from '@/types/orders';
-import OrderService from '@/utils/api/services/orderService';
 import { apiWrapper } from '@/utils/api/apiWrapper';
+import { useSession } from 'next-auth/react';
+import ZoneService, { Zone } from '@/utils/api/services/zoneService';
 
 // Función para convertir print_status numérico a status textual
 const getStatusFromPrintStatus = (printStatus: number): string => {
@@ -70,100 +86,90 @@ interface OrderData {
  */
 function OrdersDataTable() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { data: session } = useSession();
+  const authUser = session?.user;
+
   // Estado para la paginación
-  const [paginationModel, setPaginationModel] = useState({
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0,
     pageSize: 10,
   });
+  
+  // Estado para sorting (ordenamiento)
+  const [sorting, setSorting] = useState({
+    by: 'created_at',
+    type: 'desc',
+  });
+  
   // Estado para la búsqueda
   const [searchValue, setSearchValue] = useState('');
+  
   // Estados para el filtrado
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
-  const [filters, setFilters] = useState({
-    status: '',
-    payment_method: '',
-  });
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  
   // Estados para la carga y errores
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [totalRows, setTotalRows] = useState(0);
+  const [zoneList, setZoneList] = useState<Zone[]>([]);
   
   // Estados para el diálogo de confirmación de eliminación
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  
+  // Estados para mensajes y alertas
+  const [message, setMessage] = useState<{
+    type?: 'success' | 'error';
+    body?: string;
+    open?: boolean;
+  }>({});
 
   // Cargar los pedidos automáticamente al iniciar
   useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        setLoading(true);
-        const response = await apiWrapper.get('/orders', {
-          page: '',
-          perPage: '',
-          sortBy: '',
-          sortType: ''
-        });
-        
-        if (response?.data && Array.isArray(response.data)) {
-          const adaptedOrders = response.data
-            .filter((order: OrderData) => order && (order.id || order.id === 0))
-            .map((order: OrderData) => ({
-              id: order.id,
-              customer_name: order.customer_name || order.customer || '',
-              customer_id: order.customer_id || order.id_customer || '',
-              customer_type: order.customer_type || 'p',
-              total_bruto: order.total_bruto || 0,
-              total: order.total || 0,
-              delivery_cost: order.delivery_cost || 0,
-              discount: order.discount || 0,
-              status: order.print_status !== undefined ? getStatusFromPrintStatus(Number(order.print_status)) : order.status || 'pending',
-              payment_method: order.payment_method || 'ef',
-              items: order.items || order.details || [],
-              date: order.date || order.created_at || '',
-              created_at: order.created_at || '',
-              updated_at: order.updated_at || '',
-              print_status: order.print_status
-            }));
-          
-          if (adaptedOrders.length > 0) {
-            setOrders(adaptedOrders);
-            setTotalRows(response.total || adaptedOrders.length);
-          }
-        }
-        setLoading(false);
-      } catch (err) {
-        console.error('Error cargando pedidos:', err);
-        setLoading(false);
-      }
-    };
-    
-    loadOrders();
+    fetchOrders();
+    fetchZones();
   }, []);
+
+  // Función para obtener parámetros predeterminados
+  const defaultQueryString = () => {
+    const { by: sortBy, type: sortType } = sorting;
+    const { page, pageSize: perPage } = paginationModel;
+
+    return {
+      sortBy,
+      sortType,
+      perPage,
+      page,
+      filters,
+    };
+  };
   
-  // Función de búsqueda
-  const searchOrders = () => {
-    if (searchValue) {
-      // Si hay búsqueda, filtrar localmente los pedidos ya cargados
-      setOrders(prev => 
-        prev.filter((order: OrderData) => 
-          order.customer_name?.toLowerCase().includes(searchValue.toLowerCase()) ||
-          String(order.id).includes(searchValue)
-        )
-      );
-    } else {
-      // Si no hay búsqueda, recargar los pedidos
-      const loadOrders = async () => {
+  // Función para cargar pedidos
+  const fetchOrders = async (params = {}) => {
         try {
           setLoading(true);
-          const response = await apiWrapper.get('/orders', {
-            page: '',
-            perPage: '',
-            sortBy: '',
-            sortType: ''
-          });
+      
+      const {
+        page,
+        perPage,
+        sortBy,
+        sortType,
+        filters: newFilters,
+      } = { ...defaultQueryString(), ...params };
+
+      const queryParams = {
+        page: page || 0,
+        perPage: perPage || 10,
+        sortBy: sortBy || 'created_at',
+        sortType: sortType || 'desc',
+        ...(newFilters || {}),
+      };
+
+      const response = await apiWrapper.get('/orders', queryParams);
           
           if (response?.data && Array.isArray(response.data)) {
             const adaptedOrders = response.data
@@ -191,21 +197,53 @@ function OrdersDataTable() {
               setTotalRows(response.total || adaptedOrders.length);
             }
           }
+      
+      // Actualizar estados
+      setSorting({
+        by: sortBy || sorting.by,
+        type: sortType || sorting.type,
+      });
+      setFilters(newFilters || filters);
           setLoading(false);
+      
         } catch (err) {
           console.error('Error cargando pedidos:', err);
           setLoading(false);
-        }
-      };
-      
-      loadOrders();
+      setError('Error al cargar los pedidos');
     }
+  };
+  
+  // Función para cargar zonas
+  const fetchZones = async () => {
+    try {
+      const zones = await ZoneService.getAll();
+      setZoneList(zones);
+    } catch (err) {
+      console.error('Error cargando zonas:', err);
+    }
+  };
+  
+  // Función de búsqueda
+  const handleSearching = (value: string) => {
+    setSearchValue(value);
+    
+    const newFilters = {
+      ...filters,
+      search: value,
+    };
+    
+    fetchOrders({
+      ...defaultQueryString(),
+      filters: newFilters,
+    });
   };
 
   // Usar un debounce simple para la búsqueda
   useEffect(() => {
     const timer = setTimeout(() => {
-      searchOrders();
+      if (searchValue !== undefined) {
+        handleSearching(searchValue);
+      }
     }, 300);
     
     return () => clearTimeout(timer);
@@ -222,22 +260,81 @@ function OrdersDataTable() {
     setFilterAnchorEl(null);
   };
 
-  const handleFilterChange = (name: string, value: string) => {
-    setFilters({
+  const handleFiltering = (name: string, value: string) => {
+    const newFilters = {
       ...filters,
-      [name]: value,
+      [`${name}`]: value,
+    };
+    
+    setFilters(newFilters);
+    handleFilterClose();
+    
+    fetchOrders({
+      ...defaultQueryString(),
+      filters: newFilters,
     });
-    if (name === 'status' || name === 'payment_method') {
-      handleFilterClose();
-    }
+  };
+
+  const handleFilterRemove = (key: string) => {
+    const newFilters = { ...filters };
+    delete newFilters[key];
+    
+    setFilters(newFilters);
+    
+    fetchOrders({
+      ...defaultQueryString(),
+      filters: newFilters,
+    });
   };
 
   const clearFilters = () => {
-    setFilters({
-      status: '',
-      payment_method: '',
-    });
+    setFilters({});
     handleFilterClose();
+    
+    fetchOrders({
+      ...defaultQueryString(),
+      filters: {},
+    });
+  };
+  
+  /**
+   * Manejadores para sorting (ordenamiento)
+   */
+  const handleSorting = (sortBy: string, sortType: 'asc' | 'desc') => {
+    fetchOrders({
+      ...defaultQueryString(),
+      sortBy,
+      sortType,
+    });
+  };
+
+  /**
+   * Manejadores para la paginación
+   */
+  const handlePageChange = (event: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
+    setPaginationModel({
+      ...paginationModel,
+      page,
+    });
+    
+    fetchOrders({
+      ...defaultQueryString(),
+      page,
+    });
+  };
+
+  const handlePerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const perPage = parseInt(event.target.value, 10);
+    setPaginationModel({
+      page: 0, // Reset to first page
+      pageSize: perPage,
+    });
+    
+    fetchOrders({
+      ...defaultQueryString(),
+      perPage,
+      page: 0,
+    });
   };
   
   /**
@@ -252,50 +349,33 @@ function OrdersDataTable() {
     if (!orderToDelete) return;
     
     setDeleting(true);
-    
     try {
-      await OrderService.delete(orderToDelete);
-      setDeleteConfirmOpen(false);
-      setDeleteSuccess(true);
+      await apiWrapper.delete('/orders', {}, {}, orderToDelete);
       
-      // Recargar la lista después de eliminar
-      const response = await apiWrapper.get('/orders', {
-        page: '',
-        perPage: '',
-        sortBy: '',
-        sortType: ''
+      setDeleteConfirmOpen(false);
+      setOrderToDelete(null);
+      setDeleting(false);
+      
+      // Mostrar mensaje de éxito
+      setMessage({
+        type: 'success',
+        body: 'Pedido eliminado correctamente',
+        open: true,
       });
       
-      if (response?.data && Array.isArray(response.data)) {
-        const adaptedOrders = response.data
-          .filter((order: OrderData) => order && (order.id || order.id === 0))
-          .map((order: OrderData) => ({
-            id: order.id,
-            customer_name: order.customer_name || order.customer || '',
-            customer_id: order.customer_id || order.id_customer || '',
-            customer_type: order.customer_type || 'p',
-            total_bruto: order.total_bruto || 0,
-            total: order.total || 0,
-            delivery_cost: order.delivery_cost || 0,
-            discount: order.discount || 0,
-            status: order.print_status !== undefined ? getStatusFromPrintStatus(Number(order.print_status)) : order.status || 'pending',
-            payment_method: order.payment_method || 'ef',
-            items: order.items || order.details || [],
-            date: order.date || order.created_at || '',
-            created_at: order.created_at || '',
-            updated_at: order.updated_at || '',
-            print_status: order.print_status
-          }));
-        
-        setOrders(adaptedOrders);
-        setTotalRows(response.total || adaptedOrders.length);
-      }
-    } catch (err) {
-      console.error('Error al eliminar el pedido:', err);
-      setError('Error al eliminar el pedido. Por favor, intente nuevamente.');
-    } finally {
+      // Recargar pedidos
+      fetchOrders();
+      
+    } catch (error) {
+      console.error('Error al eliminar pedido:', error);
       setDeleting(false);
-      setOrderToDelete(null);
+      
+      // Mostrar mensaje de error
+      setMessage({
+        type: 'error',
+        body: 'Error al eliminar pedido',
+        open: true,
+      });
     }
   };
   
@@ -304,59 +384,42 @@ function OrdersDataTable() {
     setOrderToDelete(null);
   };
 
-  // Textos en español para el DataGrid
-  const localeText: Partial<GridLocaleText> = {
-    noRowsLabel: 'No hay registros',
-    noResultsOverlayLabel: 'No se encontraron resultados',
-    columnMenuLabel: 'Menú',
-    columnMenuShowColumns: 'Mostrar columnas',
-    columnMenuFilter: 'Filtrar',
-    columnMenuHideColumn: 'Ocultar',
-    columnMenuUnsort: 'Desordenar',
-    columnMenuSortAsc: 'Ordenar ASC',
-    columnMenuSortDesc: 'Ordenar DESC',
-    filterPanelOperator: 'Operadores',
-    filterPanelColumns: 'Columnas',
-    filterPanelInputLabel: 'Valor',
-    MuiTablePagination: {
-      labelDisplayedRows: ({ from, to, count }) =>
-        `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`,
-      labelRowsPerPage: 'Filas por página:',
-    },
+  const handleCloseMessage = () => {
+    setMessage({});
   };
 
+  // Columnas de la tabla
+  const columns = getColumns(handleDeleteClick);
+
   return (
-    <>
-      {/* Mostrar errores si los hay */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {/* Notificación de éxito al eliminar */}
-      <Snackbar 
-        open={deleteSuccess} 
-        autoHideDuration={6000} 
-        onClose={() => setDeleteSuccess(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="success" sx={{ width: '100%' }}>
-          Pedido eliminado exitosamente.
-        </Alert>
-      </Snackbar>
-      
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        borderRadius: 2, 
+        overflow: 'hidden',
+        bgcolor: 'background.paper'
+      }}
+    >
       {/* Barra de búsqueda y filtros */}
       <Box sx={{ 
+        p: 2, 
+        borderBottom: `1px solid ${theme.palette.divider}`,
         display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
         justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: 2 
+        gap: { xs: 2, sm: 1 }
       }}>
         <TextField
-          placeholder="Buscar..."
+          placeholder="Buscar pedido por cliente o ID..."
           variant="outlined"
           size="small"
+          fullWidth
+          sx={{ 
+            maxWidth: { xs: '100%', sm: 300 },
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 1.5
+            }
+          }}
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           InputProps={{
@@ -365,21 +428,31 @@ function OrdersDataTable() {
                 <SearchIcon fontSize="small" />
               </InputAdornment>
             ),
-          }}
-          sx={{ 
-            width: { xs: '100%', sm: '300px' },
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 1,
-            }
+            endAdornment: searchValue ? (
+              <InputAdornment position="end">
+                <IconButton 
+                  size="small" 
+                  onClick={() => setSearchValue('')}
+                  edge="end"
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
           }}
         />
         
         <Button
           variant="outlined"
-          size="small"
+          size="medium"
+          color="primary"
           startIcon={<FilterListIcon />}
           onClick={handleFilterClick}
-          sx={{ ml: 1 }}
+          sx={{ 
+            borderRadius: 1.5, 
+            minWidth: 100,
+            alignSelf: { xs: 'flex-end', sm: 'auto' }
+          }}
         >
           Filtros
         </Button>
@@ -390,223 +463,455 @@ function OrdersDataTable() {
           open={Boolean(filterAnchorEl)}
           onClose={handleFilterClose}
           PaperProps={{
-            sx: { width: 250, mt: 1, p: 1 }
+            sx: { 
+              width: 250,
+              maxHeight: 450,
+              mt: 0.5,
+              boxShadow: theme.shadows[4]
+            }
           }}
         >
-          <Typography variant="subtitle2" sx={{ px: 2, py: 1 }}>Estado</Typography>
-          <MenuItem 
-            onClick={() => handleFilterChange('status', '')}
-            selected={filters.status === ''}
-          >
-            Todos
+          <Box component="div">
+            <MenuItem disabled>
+              <Typography variant="subtitle2" color="textSecondary">
+                Estado del pedido
+              </Typography>
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('status', 'pending')}>
+              <Chip 
+                label={statusLabels.pending}
+                size="small"
+                color="warning"
+                sx={{ mr: 1 }}
+              />
+              Pendiente
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('status', 'processing')}>
+              <Chip 
+                label={statusLabels.processing}
+                size="small"
+                color="info"
+                sx={{ mr: 1 }}
+              />
+              En proceso
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('status', 'completed')}>
+              <Chip 
+                label={statusLabels.completed}
+                size="small"
+                color="success"
+                sx={{ mr: 1 }}
+              />
+              Completado
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('status', 'cancelled')}>
+              <Chip 
+                label={statusLabels.cancelled}
+                size="small"
+                color="error"
+                sx={{ mr: 1 }}
+              />
+              Cancelado
+            </MenuItem>
+            
+            <Divider sx={{ my: 1 }} />
+            
+            <MenuItem disabled>
+              <Typography variant="subtitle2" color="textSecondary">
+                Método de pago
+              </Typography>
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('payment_method', 'ef')}>
+              Efectivo
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('payment_method', 'trans')}>
+              Transferencia
           </MenuItem>
-          {Object.entries(statusLabels).map(([value, label]) => (
-            <MenuItem 
-              key={value} 
-              onClick={() => handleFilterChange('status', value)}
-              selected={filters.status === value}
-            >
-              {label}
+            <MenuItem onClick={() => handleFiltering('payment_method', 'mp')}>
+              Mercado Pago
+            </MenuItem>
+            
+            <Divider sx={{ my: 1 }} />
+            
+            <MenuItem disabled>
+              <Typography variant="subtitle2" color="textSecondary">
+                Tipo de cliente
+              </Typography>
+            </MenuItem>
+            <MenuItem onClick={() => handleFiltering('customer_type', 'p')}>
+              Particular
+          </MenuItem>
+            <MenuItem onClick={() => handleFiltering('customer_type', 'm')}>
+              Mayorista
+            </MenuItem>
+
+            {zoneList.length > 0 && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <MenuItem disabled>
+                  <Typography variant="subtitle2" color="textSecondary">
+                    Zonas
+                  </Typography>
+                </MenuItem>
+                {zoneList.map(zone => (
+                  <MenuItem key={zone.id} onClick={() => handleFiltering('id_zone', zone.id)}>
+                    {zone.name}
             </MenuItem>
           ))}
+              </>
+            )}
+            
+            <Divider sx={{ my: 1 }} />
           
-          <Typography variant="subtitle2" sx={{ px: 2, py: 1, mt: 1 }}>Método de pago</Typography>
-          <MenuItem 
-            onClick={() => handleFilterChange('payment_method', '')}
-            selected={filters.payment_method === ''}
-          >
-            Todos
-          </MenuItem>
-          {Object.entries(paymentMethodLabels).map(([value, label]) => (
-            <MenuItem 
-              key={value} 
-              onClick={() => handleFilterChange('payment_method', value)}
-              selected={filters.payment_method === value}
-            >
-              {label}
-            </MenuItem>
-          ))}
-          
-          {(filters.status || filters.payment_method) && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Box sx={{ p: 1 }}>
               <Button 
+                fullWidth
+                variant="outlined" 
                 size="small" 
                 onClick={clearFilters}
-                variant="outlined"
+                color="primary"
               >
                 Limpiar filtros
               </Button>
             </Box>
-          )}
+          </Box>
         </Menu>
       </Box>
       
       {/* Chips de filtros activos */}
-      {(filters.status || filters.payment_method) && (
-        <Box sx={{ display: 'flex', mb: 2, gap: 1 }}>
-          {filters.status && (
+      {Object.keys(filters).length > 0 && (
+        <Box sx={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: 1, 
+          p: 1.5,
+          bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+          borderBottom: `1px solid ${theme.palette.divider}`
+        }}>
+          {Object.entries(filters).map(([key, value]) => {
+            let label = `${key}: ${value}`;
+            
+            if (key === 'status') {
+              label = `Estado: ${statusLabels[value as keyof typeof statusLabels] || value}`;
+            } else if (key === 'payment_method') {
+              label = `Pago: ${paymentMethodLabels[value as keyof typeof paymentMethodLabels] || value}`;
+            } else if (key === 'customer_type') {
+              label = `Cliente: ${value === 'p' ? 'Particular' : 'Mayorista'}`;
+            } else if (key === 'search') {
+              label = `Búsqueda: ${value}`;
+            } else if (key === 'id_zone' && zoneList.length > 0) {
+              const zoneName = zoneList.find(zone => zone.id === value)?.name || value;
+              label = `Zona: ${zoneName}`;
+            }
+            
+            return (
             <Chip 
-              label={`Estado: ${statusLabels[filters.status as keyof typeof statusLabels]}`}
-              onDelete={() => handleFilterChange('status', '')}
+                key={key}
+                label={label}
+              size="small"
+                onDelete={() => handleFilterRemove(key)}
+                sx={{ 
+                  borderRadius: 1,
+                  bgcolor: theme.palette.background.paper
+                }}
+              />
+            );
+          })}
+            <Chip 
+            label="Limpiar todos"
               size="small"
               color="primary"
               variant="outlined"
+            onClick={clearFilters}
+            sx={{ borderRadius: 1 }}
             />
-          )}
-          {filters.payment_method && (
-            <Chip 
-              label={`Pago: ${paymentMethodLabels[filters.payment_method as keyof typeof paymentMethodLabels]}`}
-              onDelete={() => handleFilterChange('payment_method', '')}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          )}
         </Box>
       )}
       
-      {/* Tabla de datos o esqueleto durante la carga */}
+      {/* Vista responsiva para móviles o DataGrid para escritorio */}
+      {isMobile ? (
+        <Box sx={{ 
+          height: { xs: 'calc(100vh - 250px)', sm: 'auto' },
+          overflow: 'auto',
+          p: 2
+        }}>
       {loading ? (
-        <OrdersDataTableSkeleton />
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress size={40} />
+            </Box>
+          ) : orders.length === 0 ? (
+            <Alert severity="info">No se encontraron pedidos.</Alert>
       ) : (
         <>
-          {/* Si no hay datos, mostrar un botón para cargar pedidos de prueba */}
-          {orders.length === 0 && (
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                No se encontraron pedidos en el sistema.
+              {/* Tabla responsiva simple */}
+              <Box component="table" sx={{ 
+                width: '100%', 
+                borderCollapse: 'collapse',
+                fontSize: '0.95rem',
+                mb: 2
+              }}>
+                <Box component="thead" sx={{ 
+                  position: 'sticky',
+                  top: 0,
+                  backgroundColor: theme.palette.background.paper,
+                  zIndex: 1
+                }}>
+                  <Box component="tr" sx={{ 
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                  }}>
+                    <Box component="th" sx={{ 
+                      textAlign: 'left', 
+                      p: 2,
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      ID
+                    </Box>
+                    <Box component="th" sx={{ 
+                      textAlign: 'left', 
+                      p: 2,
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Fecha
+                    </Box>
+                    <Box component="th" sx={{ 
+                      textAlign: 'left', 
+                      p: 2,
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Cliente
+                    </Box>
+                    <Box component="th" sx={{ 
+                      textAlign: 'right', 
+                      p: 2,
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Total
+                    </Box>
+                    <Box component="th" sx={{ 
+                      textAlign: 'center', 
+                      p: 2,
+                      fontWeight: 'bold',
+                      width: '120px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Acciones
+                    </Box>
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {orders.map((order) => (
+                    <Box 
+                      component="tr" 
+                      key={order.id}
+                      sx={{ 
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        transition: 'background-color 0.2s',
+                        '&:hover': {
+                          backgroundColor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255, 255, 255, 0.04)' 
+                            : 'rgba(0, 0, 0, 0.02)'
+                        },
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => window.location.href = `/admin/pedidos/${order.id}`}
+                    >
+                      <Box component="td" sx={{ py: 2, px: 2, verticalAlign: 'middle' }}>
+                        <Typography variant="body1" fontWeight="medium">
+                          {order.id}
+                        </Typography>
+                      </Box>
+                      <Box component="td" sx={{ py: 2, px: 2, verticalAlign: 'middle' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
+                          {new Date(order.date || order.created_at).toLocaleDateString('es-ES', { 
+                            day: '2-digit', 
+                            month: 'short'
+                          })}
+                        </Typography>
+                      </Box>
+                      <Box component="td" sx={{ py: 2, px: 2, verticalAlign: 'middle' }}>
+                        <Typography 
+                          variant="body1" 
+                          sx={{ 
+                            maxWidth: '120px', 
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={order.customer_name}
+                        >
+                          {order.customer_name || 'Cliente sin nombre'}
+                        </Typography>
+                      </Box>
+                      <Box component="td" sx={{ py: 2, px: 2, textAlign: 'right', verticalAlign: 'middle' }}>
+                        <Typography variant="body1" fontWeight="medium" color="primary.main">
+                          {new Intl.NumberFormat('es-AR', {
+                            style: 'currency',
+                            currency: 'ARS',
+                            maximumFractionDigits: 0
+                          }).format(order.total || 0)}
               </Typography>
-              <Button 
-                variant="outlined" 
-                onClick={() => {
-                  setLoading(true);
-                  const loadOrders = async () => {
-                    try {
-                      const response = await apiWrapper.get('/orders', {
-                        page: '',
-                        perPage: '',
-                        sortBy: '',
-                        sortType: ''
-                      });
-                      
-                      if (response?.data && Array.isArray(response.data)) {
-                        const adaptedOrders = response.data
-                          .filter((order: OrderData) => order && (order.id || order.id === 0))
-                          .map((order: OrderData) => ({
-                            id: order.id,
-                            customer_name: order.customer_name || order.customer || '',
-                            customer_id: order.customer_id || order.id_customer || '',
-                            customer_type: order.customer_type || 'p',
-                            total_bruto: order.total_bruto || 0,
-                            total: order.total || 0,
-                            delivery_cost: order.delivery_cost || 0,
-                            discount: order.discount || 0,
-                            status: order.print_status !== undefined ? getStatusFromPrintStatus(Number(order.print_status)) : order.status || 'pending',
-                            payment_method: order.payment_method || 'ef',
-                            items: order.items || order.details || [],
-                            date: order.date || order.created_at || '',
-                            created_at: order.created_at || '',
-                            updated_at: order.updated_at || '',
-                            print_status: order.print_status
-                          }));
-                        
-                        if (adaptedOrders.length > 0) {
-                          setOrders(adaptedOrders);
-                          setTotalRows(response.total || adaptedOrders.length);
-                        }
-                      }
-                      setLoading(false);
-                    } catch (err) {
-                      console.error('Error cargando pedidos:', err);
-                      setLoading(false);
+                      </Box>
+                      <Box component="td" sx={{ py: 2, px: 1, textAlign: 'center', verticalAlign: 'middle' }}>
+                        <Stack direction="row" spacing={1} justifyContent="center">
+                          <IconButton 
+                            size="medium" 
+                            color="info"
+                            href={`/admin/pedidos/${order.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{ p: 1 }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton 
+                            size="medium" 
+                            color="primary"
+                            href={`/admin/pedidos/${order.id}/edit`}
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{ p: 1 }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton 
+                            size="medium" 
+                            color="error"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(order.id.toString());
+                            }}
+                            sx={{ p: 1 }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Stack>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+              
+              {/* Paginación para vista móvil */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+                <TablePagination
+                  component="div"
+                  count={totalRows}
+                  page={paginationModel.page}
+                  onPageChange={handlePageChange}
+                  rowsPerPage={paginationModel.pageSize}
+                  onRowsPerPageChange={handlePerPageChange}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  labelRowsPerPage="Filas:"
+                  labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                  sx={{
+                    '.MuiTablePagination-displayedRows': {
+                      fontSize: '0.95rem',
+                    },
+                    '.MuiTablePagination-selectLabel': {
+                      fontSize: '0.95rem',
+                    },
+                    '.MuiTablePagination-select': {
+                      fontSize: '0.95rem',
                     }
-                  };
-                  
-                  loadOrders();
-                }}
-              >
-                Recargar pedidos
-              </Button>
+                  }}
+                />
             </Box>
+            </>
           )}
-          
+        </Box>
+      ) : (
+        <Box sx={{ width: '100%', overflowX: 'auto' }}>
           <DataGrid
             rows={orders}
-            columns={getColumns(handleDeleteClick)}
-            rowCount={totalRows}
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            pageSizeOptions={[10, 25, 50, 100]}
+            columns={columns}
             pagination
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) => {
+              setPaginationModel(model);
+              handlePageChange(null, model.page);
+            }}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
             paginationMode="server"
-            autoHeight
+            rowCount={totalRows}
             disableRowSelectionOnClick
-            disableColumnMenu
-            localeText={localeText}
+            autoHeight
             loading={loading}
             sx={{
               border: 'none',
               '& .MuiDataGrid-columnHeaders': {
-                backgroundColor: 'transparent',
-                fontSize: '0.875rem',
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : 'rgba(0, 0, 0, 0.02)',
+                borderRadius: 0
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
                 fontWeight: 'bold',
-                color: theme.palette.text.secondary,
-                borderBottom: `1px solid ${theme.palette.divider}`,
               },
               '& .MuiDataGrid-cell': {
-                fontSize: '0.875rem',
-                py: 1.5,
-                borderBottom: `1px solid ${theme.palette.divider}`,
+                borderColor: theme.palette.divider,
+                alignItems: 'center',
+                paddingTop: '8px',
+                paddingBottom: '8px'
+              },
+              '& .MuiDataGrid-row': {
+                cursor: 'pointer'
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.04)' 
+                  : 'rgba(0, 0, 0, 0.04)',
               },
               '& .MuiDataGrid-footerContainer': {
-                borderTop: 'none',
-              },
-              '& .MuiTablePagination-root': {
-                fontSize: '0.875rem',
+                borderTop: `1px solid ${theme.palette.divider}`,
               },
               '& .MuiDataGrid-virtualScroller': {
-                overflowX: { xs: 'auto', md: 'hidden' }
-              },
-              '& .MuiDataGrid-main': {
-                overflow: 'auto'
-              },
-              '& .MuiDataGrid-cellContent': {
-                width: '100%'
-              },
-              '& .MuiDataGrid-cell--textRight, & .MuiDataGrid-cell--textCenter': {
-                justifyContent: { xs: 'center', sm: 'flex-end' }
+                '& .MuiDataGrid-row': {
+                  maxHeight: 'none !important',
+                  '&:nth-of-type(odd)': {
+                    backgroundColor: theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.01)'
+                      : 'rgba(0, 0, 0, 0.01)',
+                  }
+                }
               }
             }}
-            initialState={{
-              columns: {
-                columnVisibilityModel: {
-                  id: false,
-                  date: { xs: false, sm: true } as any,
-                  total_bruto: { xs: false, sm: true } as any,
-                }
-              },
+            getRowHeight={() => 'auto'}
+            getEstimatedRowHeight={() => 56}
+            getCellClassName={(params) => {
+              // Centrar verticalmente todas las celdas
+              return 'MuiDataGrid-cell--verticalCenter';
             }}
           />
-        </>
+        </Box>
       )}
       
-      {/* Diálogo de confirmación para eliminar */}
+      {/* Diálogo de confirmación de eliminación */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleDeleteCancel}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          Eliminar Pedido
+        <DialogTitle>
+          <Typography variant="h6" component="div">
+            Confirmar eliminación
+          </Typography>
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            ¿Está seguro que desea eliminar este pedido? Esta acción no se puede deshacer.
+          <DialogContentText>
+            ¿Está seguro que quiere borrar el pedido <b>#{orderToDelete}</b>? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel} color="primary">
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={handleDeleteCancel} 
+            color="inherit"
+            disabled={deleting}
+            variant="outlined"
+            sx={{ borderRadius: 1.5 }}
+          >
             Cancelar
           </Button>
           <Button 
@@ -614,28 +919,111 @@ function OrdersDataTable() {
             color="error" 
             variant="contained"
             disabled={deleting}
-            autoFocus
+            startIcon={deleting ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{ borderRadius: 1.5 }}
           >
             {deleting ? 'Eliminando...' : 'Eliminar'}
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+      
+      {/* Mensajes de notificación */}
+      <Snackbar
+        open={message.open}
+        autoHideDuration={6000}
+        onClose={handleCloseMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseMessage} 
+          severity={message.type} 
+          sx={{ width: '100%' }}
+        >
+          {message.body}
+        </Alert>
+      </Snackbar>
+    </Paper>
   );
 }
 
-/**
- * Componente de esqueleto que se muestra durante la carga de datos
- */
-function OrdersDataTableSkeleton() {
+// Componente personalizado para paginación
+function CustomPagination(props: any) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Skeleton variant="rectangular" width={200} height={40} />
-        <Skeleton variant="rectangular" width={100} height={40} />
+    <TablePagination
+      component="div"
+      count={props.count}
+      page={props.page}
+      onPageChange={props.onPageChange}
+      rowsPerPage={props.rowsPerPage}
+      onRowsPerPageChange={props.onRowsPerPageChange}
+      rowsPerPageOptions={[5, 10, 25, 50, 100]}
+      labelRowsPerPage={isMobile ? "Filas:" : "Filas por página:"}
+      labelDisplayedRows={({ from, to, count }) => (
+        `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+      )}
+      sx={{
+        '.MuiTablePagination-displayedRows': {
+          fontSize: isMobile ? '0.75rem' : '0.875rem',
+        },
+        '.MuiTablePagination-selectLabel': {
+          fontSize: isMobile ? '0.75rem' : '0.875rem',
+        }
+      }}
+      ActionsComponent={(actionsProps) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+          {!isMobile && (
+            <IconButton
+              onClick={(e) => actionsProps.onPageChange(e, 0)}
+              disabled={actionsProps.page === 0}
+              aria-label="first page"
+              size="small"
+            >
+              <NavigateBeforeIcon fontSize="small" />
+              <NavigateBeforeIcon fontSize="small" sx={{ ml: -1 }} />
+            </IconButton>
+          )}
+          <IconButton
+            onClick={(e) => actionsProps.onPageChange(e, actionsProps.page - 1)}
+            disabled={actionsProps.page === 0}
+            aria-label="previous page"
+            size="small"
+          >
+            <NavigateBeforeIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            onClick={(e) => actionsProps.onPageChange(e, actionsProps.page + 1)}
+            disabled={
+              actionsProps.page >= Math.ceil(actionsProps.count / actionsProps.rowsPerPage) - 1
+            }
+            aria-label="next page"
+            size="small"
+          >
+            <NavigateNextIcon fontSize="small" />
+          </IconButton>
+          {!isMobile && (
+            <IconButton
+              onClick={(e) =>
+                actionsProps.onPageChange(
+                  e,
+                  Math.max(0, Math.ceil(actionsProps.count / actionsProps.rowsPerPage) - 1)
+                )
+              }
+              disabled={
+                actionsProps.page >= Math.ceil(actionsProps.count / actionsProps.rowsPerPage) - 1
+              }
+              aria-label="last page"
+              size="small"
+            >
+              <NavigateNextIcon fontSize="small" />
+              <NavigateNextIcon fontSize="small" sx={{ ml: -1 }} />
+            </IconButton>
+          )}
       </Box>
-      <Skeleton variant="rectangular" height={400} />
-    </Box>
+      )}
+    />
   );
 }
 

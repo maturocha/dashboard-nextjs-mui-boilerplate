@@ -24,7 +24,11 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  useTheme,
+  useMediaQuery,
+  Card,
+  Stack
 } from '@mui/material';
 import PageContainer from '@/components/container/PageContainer';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -41,6 +45,8 @@ import { Order, statusLabels, paymentMethodLabels, statusColors } from '@/types/
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { id } = params;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Estados para manejo de carga y errores
   const [loading, setLoading] = useState(true);
@@ -151,8 +157,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       return '$0.00';
     }
     
-    // Formatear como moneda
-    return `$${numValue.toFixed(2)}`;
+    // Formatear como moneda (sin decimales en móvil para ahorrar espacio)
+    return isMobile 
+      ? `$${Math.round(numValue)}` 
+      : `$${numValue.toFixed(2)}`;
   };
   
   // Formatear fecha
@@ -162,7 +170,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
+      year: isMobile ? '2-digit' : 'numeric',
     });
   };
   
@@ -250,7 +258,14 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   return (
     <PageContainer>
       {/* Cabecera con título y acciones */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Box sx={{ 
+        mb: 3, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        alignItems: { xs: 'flex-start', sm: 'center' }, 
+        justifyContent: 'space-between',
+        gap: { xs: 2, sm: 0 }
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <IconButton
             color="primary"
@@ -260,23 +275,24 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           >
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h3" fontWeight="medium">
+          <Typography variant="h5" fontWeight="medium">
             Pedido #{order.id}
           </Typography>
         </Box>
         
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
+            size={isMobile ? "small" : "medium"}
             startIcon={<EditIcon />}
             onClick={handleEdit}
-            sx={{ mr: 1 }}
           >
             Editar
           </Button>
           <Button
             variant="outlined"
             color="error"
+            size={isMobile ? "small" : "medium"}
             startIcon={<DeleteIcon />}
             onClick={handleDeleteClick}
           >
@@ -290,7 +306,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         open={deleteSuccess} 
         autoHideDuration={6000} 
         onClose={() => setDeleteSuccess(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert severity="success" sx={{ width: '100%' }}>
           Pedido eliminado exitosamente.
@@ -301,7 +317,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       <Paper
         elevation={0}
         sx={{
-          p: 3,
+          p: { xs: 2, sm: 3 },
           mb: 4,
           borderRadius: 2,
           border: theme => `1px solid ${theme.palette.divider}`,
@@ -310,8 +326,15 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         <Grid container spacing={2}>
           {/* Sección de información del cliente */}
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h5">Información del Cliente</Typography>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: { xs: 'flex-start', sm: 'center' }, 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              mb: 2,
+              gap: { xs: 1, sm: 0 }
+            }}>
+              <Typography variant="h6">Información del Cliente</Typography>
               {(order.status || order.print_status !== undefined) && (
                 <Chip 
                   label={getPrintStatusLabel(order)}
@@ -354,11 +377,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           
           {/* Sección de información del pedido */}
           <Grid item xs={12}>
-            <Typography variant="h5" sx={{ mt: 2 }}>Información del Pedido</Typography>
+            <Typography variant="h6" sx={{ mt: 2 }}>Información del Pedido</Typography>
             <Divider sx={{ my: 2 }} />
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={6} sm={6} md={4}>
             <Typography variant="subtitle2" color="text.secondary">
               Subtotal
             </Typography>
@@ -367,7 +390,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </Typography>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={6} sm={6} md={4}>
             <Typography variant="subtitle2" color="text.secondary">
               Costo de Envío
             </Typography>
@@ -376,7 +399,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </Typography>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={6} sm={6} md={4}>
             <Typography variant="subtitle2" color="text.secondary">
               Descuento
             </Typography>
@@ -385,7 +408,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </Typography>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={6} sm={6} md={4}>
             <Typography variant="subtitle2" color="text.secondary">
               Total
             </Typography>
@@ -394,7 +417,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </Typography>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={6} sm={6} md={4}>
             <Typography variant="subtitle2" color="text.secondary">
               Fecha del Pedido
             </Typography>
@@ -403,7 +426,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </Typography>
           </Grid>
           
-          <Grid item xs={12} md={4}>
+          <Grid item xs={6} sm={6} md={4}>
             <Typography variant="subtitle2" color="text.secondary">
               Fecha de Creación
             </Typography>
@@ -415,64 +438,110 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           {/* Productos del pedido */}
           {orderItems && orderItems.length > 0 && (
             <Grid item xs={12}>
-              <Typography variant="h5" sx={{ mt: 2 }}>Productos</Typography>
+              <Typography variant="h6" sx={{ mt: 2 }}>Productos</Typography>
               <Divider sx={{ my: 2 }} />
               
-              <TableContainer>
-                <Table sx={{ minWidth: 650 }} aria-label="tabla de productos">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Producto</TableCell>
-                      <TableCell align="center">Cantidad</TableCell>
-                      <TableCell align="right">Precio Unitario</TableCell>
-                      <TableCell align="right">Subtotal</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {orderItems.map((item: any, index: number) => (
-                      <TableRow
-                        key={index}
-                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                      >
-                        <TableCell component="th" scope="row">
+              {isMobile ? (
+                // Vista compacta para móviles
+                <Stack spacing={2}>
+                  {orderItems.map((item: any, index: number) => {
+                    // Calcular subtotal
+                    const quantity = typeof item.quantity === 'string' ? 
+                      parseInt(item.quantity, 10) : (item.quantity || 0);
+                    const price = typeof item.price === 'string' ? 
+                      parseFloat(item.price) : (item.price || item.price_unit || 0);
+                    const subtotal = item.subtotal || item.price_final || (quantity * price);
+                    
+                    return (
+                      <Card key={index} variant="outlined" sx={{ p: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="medium">
                           {item.name || item.product_name || `Producto #${item.product_id || item.id_product}`}
-                        </TableCell>
-                        <TableCell align="center">
-                          {typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : item.quantity || 0}
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatCurrency(item.price || item.price_unit || 0)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {(() => {
-                            // Asegurar que cantidad y precio son valores numéricos
-                            const quantity = typeof item.quantity === 'string' ? 
-                              parseInt(item.quantity, 10) : (item.quantity || 0);
-                            const price = typeof item.price === 'string' ? 
-                              parseFloat(item.price) : (item.price || item.price_unit || 0);
-                            
-                            // Usar el subtotal existente si está definido, o calcularlo
-                            const subtotal = item.subtotal || item.price_final || (quantity * price);
-                            return formatCurrency(subtotal);
-                          })()}
-                        </TableCell>
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Cantidad:
+                          </Typography>
+                          <Typography variant="body2">
+                            {quantity}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Precio:
+                          </Typography>
+                          <Typography variant="body2">
+                            {formatCurrency(price)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Subtotal:
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold">
+                            {formatCurrency(subtotal)}
+                          </Typography>
+                        </Box>
+                      </Card>
+                    );
+                  })}
+                </Stack>
+              ) : (
+                // Tabla para pantallas más grandes
+                <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+                  <Table aria-label="tabla de productos">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Producto</TableCell>
+                        <TableCell align="center">Cantidad</TableCell>
+                        <TableCell align="right">Precio Unitario</TableCell>
+                        <TableCell align="right">Subtotal</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {orderItems.map((item: any, index: number) => {
+                        // Calcular valores numéricos
+                        const quantity = typeof item.quantity === 'string' ? 
+                          parseInt(item.quantity, 10) : (item.quantity || 0);
+                        const price = typeof item.price === 'string' ? 
+                          parseFloat(item.price) : (item.price || item.price_unit || 0);
+                        const subtotal = item.subtotal || item.price_final || (quantity * price);
+                        
+                        return (
+                          <TableRow
+                            key={index}
+                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                          >
+                            <TableCell component="th" scope="row">
+                              {item.name || item.product_name || `Producto #${item.product_id || item.id_product}`}
+                            </TableCell>
+                            <TableCell align="center">
+                              {quantity}
+                            </TableCell>
+                            <TableCell align="right">
+                              {formatCurrency(price)}
+                            </TableCell>
+                            <TableCell align="right">
+                              {formatCurrency(subtotal)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </Grid>
           )}
           
           {/* Notas adicionales si existen */}
           {order.notes && (
-            <Grid item xs={12}>
+            <Grid item xs={12} sx={{ mt: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">
                 Notas
               </Typography>
               <Paper
                 variant="outlined"
-                sx={{ p: 2, backgroundColor: 'background.default' }}
+                sx={{ p: 2, backgroundColor: 'background.default', mt: 1 }}
               >
                 <Typography variant="body2">
                   {order.notes}
@@ -487,19 +556,28 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleDeleteCancel}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
       >
-        <DialogTitle id="alert-dialog-title">
-          Eliminar Pedido
+        <DialogTitle>
+          <Typography variant="h6">Eliminar Pedido</Typography>
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            ¿Está seguro que desea eliminar el pedido #{order.id}? Esta acción no se puede deshacer.
+          <DialogContentText>
+            ¿Está seguro que desea eliminar el pedido <b>#{order.id}</b>? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel} color="primary">
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={handleDeleteCancel} 
+            color="inherit"
+            variant="outlined"
+            size={isMobile ? "small" : "medium"}
+            sx={{ borderRadius: 1.5 }}
+          >
             Cancelar
           </Button>
           <Button 
@@ -507,7 +585,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             color="error" 
             variant="contained"
             disabled={deleting}
-            autoFocus
+            size={isMobile ? "small" : "medium"}
+            sx={{ borderRadius: 1.5 }}
           >
             {deleting ? 'Eliminando...' : 'Eliminar'}
           </Button>

@@ -1,43 +1,40 @@
-import { Suspense } from 'react';
-import { Typography, Box, Skeleton } from '@mui/material';
+'use client';
+
+import { Typography, Box, useTheme, useMediaQuery } from '@mui/material';
 import PageContainer from '@/components/container/PageContainer';
 import OrdersDataTable from './_components/data-table/data-table';
-import { Metadata } from 'next';
 import AddButton from './_components/AddButton';
 
-export const metadata: Metadata = {
-  title: 'Gestión de Pedidos',
-  description: 'Administración de pedidos y órdenes',
-};
-
-// Skeleton para la carga
-function OrdersDataTableSkeleton() {
-  return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Skeleton variant="rectangular" width={200} height={40} />
-        <Skeleton variant="rectangular" width={100} height={40} />
-      </Box>
-      <Skeleton variant="rectangular" height={400} />
-    </Box>
-  );
-}
-
 export default function OrdersPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   return (
     <PageContainer>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h3" fontWeight="medium">
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: { xs: 2, sm: 3 },
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 2, sm: 0 },
+        px: { xs: 0, sm: 0 }
+      }}>
+        <Typography 
+          variant="h5" 
+          fontWeight="medium"
+          sx={{ 
+            fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
+            alignSelf: { xs: 'flex-start', sm: 'center' },
+            color: theme.palette.text.primary
+          }}
+        >
           Pedidos
         </Typography>
         <AddButton />
       </Box>
       
-      <Box>
-        <Suspense fallback={<OrdersDataTableSkeleton />}>
-          <OrdersDataTable />
-        </Suspense>
-      </Box>
+      <OrdersDataTable />
     </PageContainer>
   );
 }

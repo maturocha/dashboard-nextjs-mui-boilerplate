@@ -1,7 +1,7 @@
 'use client';
 
 import { GridColDef } from '@mui/x-data-grid';
-import { Chip, Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Chip, Box, IconButton, Tooltip, Typography, useTheme, useMediaQuery } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,199 +25,172 @@ interface ActionsProps {
   onDelete: (id: string) => void;
 }
 
-export const getColumns = (onDelete: (id: string) => void): GridColDef[] => [
-  { 
-    field: 'id', 
-    headerName: 'ID', 
-    width: 90,
-    renderCell: (params) => (
-      <Typography variant="body2">
-        {params.value}
-      </Typography>
-    )
-  },
-  {
-    field: 'customer_name',
-    headerName: 'Cliente',
-    flex: 1,
-    minWidth: 180,
-    renderCell: (params) => (
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Typography variant="body2">
-          {params.row.customer_name || params.row.customer || ''}
+export const getColumns = (onDelete: (id: string) => void): GridColDef[] => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  return [
+    { 
+      field: 'id', 
+      headerName: 'ID', 
+      width: 70,
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium">
+          {params.value}
         </Typography>
-        {params.row.customer_type && (
+      )
+    },
+    {
+      field: 'date',
+      headerName: 'Fecha',
+      width: 120,
+      renderCell: (params) => (
+        <Typography variant="body2" color="text.secondary">
+          {new Date(params.value).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+          })}
+        </Typography>
+      ),
+    },
+    {
+      field: 'customer_name',
+      headerName: 'Cliente',
+      flex: 1,
+      minWidth: 180,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Typography 
+            variant="body2" 
+            fontWeight="medium"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: 200
+            }}
+            title={params.value}
+          >
+            {params.value || 'Cliente sin nombre'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {params.row.customer_type === 'p' ? 'Particular' : 'Mayorista'}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'total_bruto',
+      headerName: 'Subtotal',
+      width: 120,
+      align: 'right',
+      headerAlign: 'right',
+      renderCell: (params) => (
+        <Typography variant="body2" sx={{ py: 1 }}>
+          {new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0
+          }).format(params.value || 0)}
+        </Typography>
+      ),
+    },
+    {
+      field: 'total',
+      headerName: 'Total',
+      width: 120,
+      align: 'right',
+      headerAlign: 'right',
+      renderCell: (params) => (
+        <Typography variant="body2" fontWeight="medium" color="primary.main">
+          {new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0
+          }).format(params.value || 0)}
+        </Typography>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Estado',
+      width: 140,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const statusValue = params.value as keyof typeof statusLabels;
+        const chipColor = 
+          statusValue === 'pending' ? 'warning' :
+          statusValue === 'processing' ? 'info' :
+          statusValue === 'completed' ? 'success' :
+          statusValue === 'cancelled' ? 'error' : 'default';
+        
+        return (
           <Chip 
-            label={params.row.customer_type === 'p' ? 'Particular' : 'Mayorista'}
+            label={statusLabels[statusValue] || 'Desconocido'} 
             size="small"
-            variant="outlined"
-            sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
-          />
-        )}
-      </Box>
-    ),
-  },
-  {
-    field: 'total_bruto',
-    headerName: 'Subtotal',
-    width: 120,
-    align: 'right',
-    headerAlign: 'right',
-    renderCell: (params) => (
-      <Typography variant="body2">
-        {new Intl.NumberFormat('es-AR', {
-          style: 'currency',
-          currency: 'ARS'
-        }).format(params.value as number)}
-      </Typography>
-    ),
-  },
-  {
-    field: 'total',
-    headerName: 'Total',
-    width: 120,
-    align: 'right',
-    headerAlign: 'right',
-    renderCell: (params) => (
-      <Typography variant="body2">
-        {new Intl.NumberFormat('es-AR', {
-          style: 'currency',
-          currency: 'ARS'
-        }).format(params.value as number)}
-      </Typography>
-    ),
-  },
-  {
-    field: 'status',
-    headerName: 'Estado',
-    width: 130,
-    align: 'center',
-    headerAlign: 'center',
-    renderCell: (params) => {
-      // Determinar el estado basado en print_status primero (si existe)
-      const print_status = params.row.print_status;
-      const status = print_status !== undefined ? getStatusFromPrintStatus(Number(print_status)) : params.value as Order['status'];
-      
-      // Si el valor no está en los statusLabels definidos, usar un valor por defecto
-      const label = statusLabels[status] || status || 'Desconocido';
-      
-      let chipProps = {
-        label,
-        size: "small" as "small"
-      };
-      
-      // Mapear colors de acuerdo al status
-      const colorMapping: Record<string, string> = {
-        'pending': '#FFA500',
-        'processing': '#2196F3',
-        'completed': '#4CAF50',
-        'cancelled': '#F44336'
-      };
-      
-      const bgColor = colorMapping[status] || '#9E9E9E';
-      
-      return (
-        <Box sx={{ 
-          width: '100%', 
-          display: 'flex', 
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%'
-        }}>
-          <Chip 
-            {...chipProps} 
+            color={chipColor}
             sx={{ 
-              bgcolor: bgColor, 
-              color: 'white', 
-              minWidth: { xs: 75, sm: 90 }, 
+              minWidth: 100,
+              fontWeight: 'medium',
               fontSize: '0.75rem',
-              '& .MuiChip-label': { 
-                px: { xs: 1, sm: 2 }
-              }
-            }} 
+              height: 24
+            }}
           />
+        );
+      },
+    },
+    {
+      field: 'payment_method',
+      headerName: 'Pago',
+      width: 140,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const methodValue = params.value as keyof typeof paymentMethodLabels;
+        return (
+          <Typography variant="body2">
+            {paymentMethodLabels[methodValue] || 'Desconocido'}
+          </Typography>
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Acciones',
+      width: 140,
+      sortable: false,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <IconButton 
+            size="small" 
+            color="info" 
+            href={`/admin/pedidos/${params.row.id}`}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+          <IconButton 
+            size="small" 
+            color="primary" 
+            href={`/admin/pedidos/${params.row.id}/edit`}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton 
+            size="small" 
+            color="error" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(params.row.id.toString());
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
         </Box>
-      );
+      ),
     },
-  },
-  {
-    field: 'payment_method',
-    headerName: 'Pago',
-    width: 120,
-    align: 'left',
-    headerAlign: 'left',
-    renderCell: (params) => (
-      <Typography variant="body2">
-        {params.value ? paymentMethodLabels[params.value as Order['payment_method']] : paymentMethodLabels['ef']}
-      </Typography>
-    ),
-  },
-  {
-    field: 'date',
-    headerName: 'Fecha',
-    width: 120,
-    align: 'left',
-    headerAlign: 'left',
-    renderCell: (params) => {
-      const date = params.value ? new Date(params.value) : null;
-      return (
-        <Typography variant="body2">
-          {date ? date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/') : '-'}
-        </Typography>
-      );
-    },
-  },
-  {
-    field: 'actions',
-    headerName: 'Acciones',
-    width: 120,
-    sortable: false,
-    filterable: false,
-    align: 'center',
-    headerAlign: 'center',
-    renderCell: (params) => {
-      const handleDelete = (event: React.MouseEvent) => {
-        event.stopPropagation();
-        onDelete(params.row.id);
-      };
-      
-      return (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center',
-          width: '100%',
-          gap: { xs: 0.5, sm: 1 },
-          flexWrap: { xs: 'nowrap' }
-        }}>
-          <Tooltip title="Ver detalles">
-            <IconButton
-              size="small"
-              href={`/admin/pedidos/${params.row.id}`}
-              color="info"
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Editar">
-            <IconButton
-              size="small"
-              href={`/admin/pedidos/${params.row.id}/edit`}
-              color="primary"
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={handleDelete}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      );
-    },
-  },
-]; 
+  ];
+}; 
