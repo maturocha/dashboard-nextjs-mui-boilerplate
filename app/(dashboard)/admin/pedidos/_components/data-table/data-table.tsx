@@ -41,7 +41,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { getColumns } from './columns';
+import { getColumns, useOrderColumns } from './columns';
 import { statusLabels, paymentMethodLabels } from '@/types/orders';
 import { apiWrapper } from '@/utils/api/apiWrapper';
 import { useSession } from 'next-auth/react';
@@ -388,8 +388,8 @@ function OrdersDataTable() {
     setMessage({});
   };
 
-  // Columnas de la tabla
-  const columns = getColumns(handleDeleteClick);
+  // Columnas de la tabla usando el hook
+  const columns = useOrderColumns(handleDeleteClick);
 
   return (
     <Paper 

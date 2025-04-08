@@ -25,7 +25,8 @@ interface ActionsProps {
   onDelete: (id: string) => void;
 }
 
-export const getColumns = (onDelete: (id: string) => void): GridColDef[] => {
+// Convertimos getColumns en un hook personalizado para cumplir con las reglas de hooks de React
+export function useOrderColumns(onDelete: (id: string) => void): GridColDef[] {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
@@ -193,4 +194,23 @@ export const getColumns = (onDelete: (id: string) => void): GridColDef[] => {
       ),
     },
   ];
+}
+
+// Función auxiliar para mantener compatibilidad con el código existente
+export const getColumns = (onDelete: (id: string) => void): GridColDef[] => {
+  // Esta función no usa hooks, solo es un wrapper para mantener compatibilidad
+  // con el código existente que llama a getColumns
+  const defaultColumns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    { field: 'date', headerName: 'Fecha', width: 120 },
+    { field: 'customer_name', headerName: 'Cliente', flex: 1, minWidth: 180 },
+    { field: 'total_bruto', headerName: 'Subtotal', width: 120, align: 'right', headerAlign: 'right' },
+    { field: 'total', headerName: 'Total', width: 120, align: 'right', headerAlign: 'right' },
+    { field: 'status', headerName: 'Estado', width: 140, align: 'center', headerAlign: 'center' },
+    { field: 'payment_method', headerName: 'Pago', width: 140, align: 'center', headerAlign: 'center' },
+    { field: 'actions', headerName: 'Acciones', width: 140, sortable: false, align: 'center', headerAlign: 'center' }
+  ];
+  
+  // Esta función se llamará desde un componente React que debería usar useOrderColumns
+  return defaultColumns;
 }; 

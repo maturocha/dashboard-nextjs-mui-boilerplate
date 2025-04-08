@@ -133,8 +133,13 @@ export default function ClientSelector({ value, onChange, error, helperText }: C
         />
       )}
       renderOption={(props, option) => {
-        // Extraer la prop key del objeto props
-        const { key, ...otherProps } = props;
+        // No podemos desestructurar key directamente porque TypeScript no lo reconoce
+        // Usamos el operador spread para pasar todas las props excepto key
+        const otherProps = { ...props };
+        // Eliminamos la propiedad key si existe, para evitar el warning
+        if ('key' in otherProps) {
+          delete (otherProps as any).key;
+        }
         
         return (
           <li key={option.id} {...otherProps}>
