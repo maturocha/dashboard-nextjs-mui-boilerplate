@@ -29,14 +29,16 @@ const handler = NextAuth({
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signin`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(credentials),
         });
 
         const data = await res.json();
 
+        console.log(data);
+
         if (!res.ok) {
-          throw new Error(data.message || 'Authentication failed');
+          throw new Error('Error al iniciar sesión');
         }
 
         // Devuelve solo el token
