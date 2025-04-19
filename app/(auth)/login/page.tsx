@@ -25,7 +25,7 @@ export default function LoginPage() {
   const theme = useTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard"
+  const callbackUrl = searchParams?.get("callbackUrl") || "/"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -52,7 +52,7 @@ export default function LoginPage() {
       } else if (result?.url) {
         router.push(result.url)
       } else {
-        router.push("/dashboard")
+        router.push("/")
       }
     } catch (error) {
       console.error("Error de inicio de sesión:", error)

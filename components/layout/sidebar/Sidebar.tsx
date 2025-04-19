@@ -23,6 +23,7 @@ import Brightness7Icon from "@mui/icons-material/Brightness7"
 import SidebarItems from "./SidebarItems"
 
 import { useTheme as useAppTheme } from "@/utils/providers/theme"
+import { signOut } from "next-auth/react"
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
@@ -141,6 +142,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <LogoutIcon />
           </ListItemIcon>
           <ListItemText
+            onClick={() => signOut()}
             primary="Cerrar sesión"
             primaryTypographyProps={{
               fontSize: 14,
