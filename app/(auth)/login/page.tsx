@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Box from "@mui/material/Box"
 import Card from "@mui/material/Card"
@@ -24,8 +24,8 @@ export default function LoginPage() {
 
   const theme = useTheme()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams?.get("callbackUrl") || "/"
+  
+  const callbackUrl = "/"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

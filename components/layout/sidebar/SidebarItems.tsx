@@ -21,6 +21,7 @@ const SidebarItems = () => {
             /* eslint no-else-return: "off" */
           } else {
             return  <NavItem
+                        key={item.id}
                         item={item}
                         isActive={isActive}
                       />
