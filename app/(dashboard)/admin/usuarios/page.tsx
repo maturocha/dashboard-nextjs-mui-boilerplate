@@ -3,12 +3,9 @@
 import { 
   Box,
   Typography, 
-  Button,
   Chip,
-  Grid,
+  useTheme,
 } from "@mui/material";
-
-import AddIcon from "@mui/icons-material/Add";
 
 import MenuList from "@/components/table/MenuList";
 import { useList } from "@/hooks/useList";
@@ -22,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Role, api as roleApi } from "@/models/Role";
 import { useScrollPosition } from '@/hooks/useScrollPosition';
+import PageListHeader from "@/components/layout/page/PageListHeader";
 
 const fetchUsers = async ({ page, perPage, sortBy, sortType, filters }: any) => {
   const response = await apiWrapper.get(api.list, {
@@ -57,6 +55,7 @@ export default function UsersPageList() {
     defaultPagination: { page: 1, perPage: 10 },
   });
 
+  const theme = useTheme()
   const router = useRouter();
   const { openModal, showToast } = useAppContext();
   const [filtersList, setFiltersList] = useState<Array<{
@@ -137,12 +136,13 @@ export default function UsersPageList() {
   }));
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: "100%" }}>
+    {/* Header con título y botón de nuevo producto */}
     
-      <Box display="flex" flexDirection={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems="center" gap={4} mb={2} margin={'0 auto'}>
-        <Typography variant="h3" sx={{ fontSize: "2rem"}}>{labels.plural}</Typography>
-        <Button variant="contained" color="primary" onClick={() => router.push(views.create)} startIcon={<AddIcon />}>Crear {labels.singular}</Button>
-      </Box>
+     <PageListHeader 
+      labels={labels} 
+      createUrl={views.create} />
+    
       {error && <Typography color="error" mb={2}>{error}</Typography>}
     
         <Table

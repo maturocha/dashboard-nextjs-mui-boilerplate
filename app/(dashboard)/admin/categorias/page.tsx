@@ -18,6 +18,7 @@ import { useAppContext } from "@/context/AppContext";
 import { ModalType } from "@/types/app";
 import { useRouter } from "next/navigation";
 import { useScrollPosition } from '@/hooks/useScrollPosition';
+import PageListHeader from "@/components/layout/page/PageListHeader";
 
 const fetchCategories = async ({ page, perPage, sortBy, sortType, filters }: any) => {
   const response = await apiWrapper.get(api.list, {
@@ -126,11 +127,12 @@ const handleDelete = async (category: Category) => {
   }));
 
   return (
-    <Box sx={{ width: "100%", padding: { xs: 1, sm: 2 } }}>
-     <Box display="flex" flexDirection={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems="center" gap={4} mb={2} margin={'0 auto'}>
-        <Typography variant="h3" sx={{ fontSize: "2rem"}}>{labels.plural}</Typography>
-        <Button variant="contained" color="primary" onClick={() => router.push(views.create)} startIcon={<AddIcon />}>Crear {labels.singular}</Button>
-      </Box>
+    <Box sx={{ maxWidth: "100%" }}>
+    {/* Header con título y botón de nuevo producto */}
+    
+     <PageListHeader 
+      labels={labels} 
+      createUrl={views.create} />
     {error && <Typography color="error" mb={2}>{error}</Typography>}
     <Box sx={{ width: "100%", overflowX: "auto" }}>
         <Table

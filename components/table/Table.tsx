@@ -99,7 +99,7 @@ const Table = ({
     <div style={{ width: '100%', overflowX: 'auto' }}>
 
         
-      <TableToolbar
+      {/* <TableToolbar
         filters={filters}
         filteredList={filteredList}
         onFilter={onFilter}
@@ -107,7 +107,7 @@ const Table = ({
         hasSearch={hasSearch}
         onSearch={onSearch}
         searchTextDefault={searchTextDefault}
-      />
+      /> */}
 
       <TableWrapper>
         <MuiTable stickyHeader>

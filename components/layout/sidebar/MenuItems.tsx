@@ -1,18 +1,8 @@
-import {
-  IconHome,
-  IconUsers,
-  IconCategory,
-  IconMap,
-  IconTruck,
-  IconBox,
-  IconShoppingCart,
-  IconUsers as IconCustomers,
-  IconChartBar,
-  IconSettings,
-  IconPackage,
-  IconCash,
-  IconList,
-} from "@tabler/icons-react";
+
+import DashboardIcon from "@mui/icons-material/Dashboard"
+import UsersIcon from "@mui/icons-material/Group"
+import CategoryIcon from "@mui/icons-material/Category"
+import SettingsIcon from "@mui/icons-material/Settings"
 
 import { uniqueId } from "lodash";
 
@@ -24,7 +14,7 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: "Dashboard",
-    icon: IconHome,
+    icon: <DashboardIcon />,
     href: "/",
   },
   // {
@@ -67,14 +57,14 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: "Usuarios",
-    icon: IconUsers,
+    icon: <UsersIcon />,
     href: "/admin/usuarios",
     role: "admin",
   },
   {
     id: uniqueId(),
     title: "Categorías",
-    icon: IconCategory,
+    icon: <CategoryIcon />,
     href: "/admin/categorias",
     role: "admin",
   },
@@ -122,7 +112,7 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: "Cuenta",
-    icon: IconSettings,
+    icon: <SettingsIcon />,
     href: "/settings",
   },
 ];

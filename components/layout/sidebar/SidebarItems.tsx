@@ -1,22 +1,18 @@
 import React from "react";
 import Menuitems from "./MenuItems";
 import { usePathname } from "next/navigation";
-import { Box, List } from "@mui/material";
+import { List } from "@mui/material";
 import NavItem from "./NavItem";
-import NavGroup from "./NavGroup/NavGroup";
+import NavGroup from "./NavGroup";
 
-interface SidebarItemsProps {
-  onItemClick: (event: React.MouseEvent<HTMLElement>) => void;
-}
-
-const SidebarItems = ({ onItemClick }: SidebarItemsProps) => {
+const SidebarItems = () => {
   const pathname = usePathname();
-  const pathDirect = pathname;
 
   return (
-    <Box sx={{ px: 3 }}>
-      <List sx={{ pt: 0 }} className="sidebarNav" component="div">
+    <List sx={{ flexGrow: 1, px: 2, py: 2 }}>
         {Menuitems.map((item) => {
+
+          const isActive = pathname === item.href
           // {/********SubHeader**********/}
           if (item.subheader) {
             return <NavGroup item={item} key={item.subheader} />;
@@ -24,18 +20,13 @@ const SidebarItems = ({ onItemClick }: SidebarItemsProps) => {
             // {/********If Sub Menu**********/}
             /* eslint no-else-return: "off" */
           } else {
-            return (
-              <NavItem
-                item={item}
-                key={item.id}
-                pathDirect={pathDirect}
-                onClick={onItemClick}
-              />
-            );
+            return  <NavItem
+                        item={item}
+                        isActive={isActive}
+                      />
           }
         })}
       </List>
-    </Box>
   );
 };
 export default SidebarItems;
