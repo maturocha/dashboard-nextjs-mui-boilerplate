@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, Typography, Container, CircularProgress } from '@mui/material'
-import { UserForm } from '@/app/(dashboard)/admin/usuarios/_components/Form'
-import { FormValues, User, api, views } from '@/models/User'
+import { CategoryForm } from '@/app/(dashboard)/admin/categorias/_components/Form'
+import { FormValues, Category, api, views } from '@/models/Category'
 import { apiWrapper } from '@/utils/api/apiWrapper'
 import { FormikHelpers } from 'formik'
 import { useAppContext } from '@/context/AppContext'
 import { labels } from '@/models/Category';
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function EditCategoryPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [category, setCategory] = useState<Category | null>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { showToast } = useAppContext()
@@ -22,7 +22,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
       try {
         const response = await apiWrapper.get(api.get.replace(':id', params.id))
         console.log(response);
-        setUser(response)
+        setCategory(response)
       } catch (error: any) {
         setError('Error al cargar el usuario')
         showToast('Error al cargar el usuario', 'error')
@@ -67,7 +67,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
     )
   }
 
-  if (error || !user) {
+  if (error || !category) {
     return (
       <Container maxWidth="md">
         <Typography color="error" align="center">
@@ -78,11 +78,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
   }
 
   const initialValues: FormValues = {
-    name: user.name,
-    email: user.email,
-    role_id: user.role_id,
-    password: '',
-    cel: user.cel || '',
+    name: category.name
   }
 
   return (
@@ -92,10 +88,9 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
           Editar {labels.singular}
         </Typography>
         
-        <UserForm 
+        <CategoryForm 
           values={initialValues}
           handleSubmit={handleSubmit}
-          isCreating={false}
         />
       </Box>
     </Container>

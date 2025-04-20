@@ -2,11 +2,8 @@
 
 import { 
   Box, 
-  Typography, 
-  Button
+  Typography
 } from "@mui/material";
-
-import AddIcon from "@mui/icons-material/Add";
 
 import MenuList from "@/components/table/MenuList";
 import { useList } from "@/hooks/useList";
@@ -19,6 +16,9 @@ import { ModalType } from "@/types/app";
 import { useRouter } from "next/navigation";
 import { useScrollPosition } from '@/hooks/useScrollPosition';
 import PageListHeader from "@/components/layout/page/PageListHeader";
+
+import EditIcon from "@mui/icons-material/Edit"
+import DeleteIcon from "@mui/icons-material/Delete"
 
 const fetchCategories = async ({ page, perPage, sortBy, sortType, filters }: any) => {
   const response = await apiWrapper.get(api.list, {
@@ -35,7 +35,7 @@ const fetchCategories = async ({ page, perPage, sortBy, sortType, filters }: any
   };
 };
 
-export default function UsersPageList() {
+export default function CategoriesPageList() {
   const {
     loading,
     error,
@@ -47,7 +47,7 @@ export default function UsersPageList() {
     filters,
     setFilters,
     handleSearching,
-    refetch
+    forceRefetch
   } = useList({
     fetchData: fetchCategories,
     defaultSorting: { by: "name", type: "asc" },
@@ -80,7 +80,7 @@ const handleDelete = async (category: Category) => {
         try {
           await apiWrapper.delete(api.delete.replace(':id', resourceId));
           showToast("Categoría eliminada correctamente");
-          refetch();
+          forceRefetch();
         } catch (error) {
           console.error("Error al eliminar:", error);
         }
@@ -114,10 +114,12 @@ const handleDelete = async (category: Category) => {
           listItems={[
             {
               title: "Editar",
+              icon: <EditIcon fontSize="small" />,
               onClick: () => handleEdit(category.id.toString()),
             },
             {
               title: "Eliminar",
+              icon: <DeleteIcon fontSize="small"/>,
               onClick: () => handleDelete(category),
             },
           ]}

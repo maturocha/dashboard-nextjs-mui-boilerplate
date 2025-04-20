@@ -82,7 +82,7 @@ export function AppProvider({ children }: AppProviderProps) {
         open={toast.open} 
         autoHideDuration={2500} 
         onClose={handleCloseToast}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
           onClose={handleCloseToast}

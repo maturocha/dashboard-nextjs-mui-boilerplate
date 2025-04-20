@@ -4,7 +4,7 @@ import type React from "react"
 
 import { createTheme, ThemeProvider as MUIThemeProvider } from "@mui/material/styles"
 import CssBaseline from "@mui/material/CssBaseline"
-import { useMemo, createContext, useState, useContext } from "react"
+import { useMemo, createContext, useState, useContext, useEffect, useCallback } from "react"
 import type { PaletteMode } from "@mui/material"
 
 type ThemeContextType = {
@@ -19,19 +19,18 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const useTheme = () => useContext(ThemeContext)
 
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [mode, setMode] = useState<PaletteMode>("light")
 
-  const colorMode = useMemo(
-    () => ({
-      mode,
-      toggleColorMode: () => {
-        setMode((prevMode) => (prevMode === "light" ? "dark" : "light"))
-      },
-    }),
-    [mode],
-  )
+  useEffect(() => {
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem("theme")
+    if (savedTheme) {
+      setMode(savedTheme as PaletteMode)
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setMode("dark")
+    }
+  }, [])
 
   const theme = useMemo(
     () =>
@@ -150,11 +149,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           },
         },
       }),
-    [mode],
+    [mode]
   )
 
+  const toggleColorMode = useCallback(() => {
+    setMode((prevMode) => {
+      const newMode = prevMode === "light" ? "dark" : "light"
+      localStorage.setItem("theme", newMode)
+      return newMode
+    })
+  }, [])
+
   return (
-    <ThemeContext.Provider value={colorMode}>
+    <ThemeContext.Provider value={{ mode, toggleColorMode }}>
       <MUIThemeProvider theme={theme}>
         <CssBaseline />
         {children}

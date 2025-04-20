@@ -7,6 +7,9 @@ import {
   useTheme,
 } from "@mui/material";
 
+import EditIcon from "@mui/icons-material/Edit"
+import DeleteIcon from "@mui/icons-material/Delete"
+
 import MenuList from "@/components/table/MenuList";
 import { useList } from "@/hooks/useList";
 import { apiWrapper } from "@/utils/api/apiWrapper";
@@ -48,7 +51,7 @@ export default function UsersPageList() {
     filters,
     setFilters,
     handleSearching,
-    refetch
+    forceRefetch
   } = useList({
     fetchData: fetchUsers,
     defaultSorting: { by: "name", type: "asc" },
@@ -105,7 +108,7 @@ export default function UsersPageList() {
         try {
           await apiWrapper.delete(api.delete.replace(':id', userId));
           showToast("Usuario eliminado correctamente");
-          refetch();
+          forceRefetch();
         } catch (error) {
           console.error("Error al eliminar:", error);
         }
@@ -118,16 +121,18 @@ export default function UsersPageList() {
   const transformedData = users.map((user: User) => ({
     name: user.name,
     email: user.email,
-    rol: (<Chip color="primary" label={user.rol} />),
+    rol: (<Chip color="secondary" label={user.rol} />),
     actions: (
       <MenuList
       listItems={[
         {
           title: "Editar",
+          icon: <EditIcon fontSize="small" />,
           onClick: () => handleEdit(user.id.toString()),
         },
         {
           title: "Eliminar",
+          icon: <DeleteIcon fontSize="small" />,
           onClick: () => handleDelete(user),
         },
       ]}

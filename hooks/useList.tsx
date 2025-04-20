@@ -39,7 +39,6 @@ export const useList = <TFilters extends Record<string, any>>({
   const [sorting, setSorting] = useState(defaultValues.sorting);
   const [filters, setFilters] = useState(defaultValues.filters);
 
-  const didMount = useRef(false);
   const prevFetchParams = useRef<string | null>(null);
   const initialized = useRef(false);
 
@@ -144,6 +143,11 @@ export const useList = <TFilters extends Record<string, any>>({
     return doFetch();
   }, [doFetch]);
 
+  const forceRefetch = useCallback(() => {
+    prevFetchParams.current = null; // Forzar la no coincidencia de parámetros
+    return doFetch();
+  }, [doFetch]);
+
   // Optimized handleSearching
   const handleSearching = useCallback((value: string) => {
     setFilters(prev => prev.search === value ? prev : { ...prev, search: value });
@@ -162,5 +166,6 @@ export const useList = <TFilters extends Record<string, any>>({
     setFilters,
     handleSearching,
     refetch,
+    forceRefetch,
   };
 };

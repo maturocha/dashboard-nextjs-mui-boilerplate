@@ -1,12 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
-import { styled } from '@mui/material/styles';
 import {
     Chip,
     Toolbar,
     Box,
     Button
 } from '@mui/material';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import TuneIcon from '@mui/icons-material/Tune';
 import FilterModal from './FilterModal';
 import ToolbarActions from './ToolbarActions';
 import { ActiveFilter, TableToolbarProps } from '@/types/table';
@@ -39,16 +38,6 @@ const ActiveFilterChips = ({
     </Box>
 );
 
-const StyledToolbar = styled(Toolbar)(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: theme.spacing(1),
-    gap: theme.spacing(2),
-    flexWrap: 'wrap',
-    borderBottom: `1px solid ${theme.palette.divider}`,
-}));
-
 const TableToolbar = ({
     exportButton,
     filters,
@@ -60,7 +49,6 @@ const TableToolbar = ({
     hasSearch = false
 }: TableToolbarProps) => {
 
-    console.log(filters)
     const [openSearchModal, setOpenSearchModal] = useState(false);
     
     const handleToggleSearchModal = useCallback(() => {
@@ -94,7 +82,7 @@ const TableToolbar = ({
 
     return (
         <Box>
-            <StyledToolbar>
+            <Toolbar>
                 <Box sx={{ flex: 1 }}>
                     {activeFilters.length > 0 ? (
                         <ActiveFilterChips 
@@ -108,7 +96,7 @@ const TableToolbar = ({
                         display: 'flex', 
                         alignItems: 'center', 
                         gap: 1,
-                        ml: 'auto' 
+                        ml: 'auto'
                     }}
                 >
                     <ToolbarActions 
@@ -119,9 +107,9 @@ const TableToolbar = ({
                     />
                     <Button
                         variant="outlined"
-                        size="medium"
+                        
                         disabled={filters ? false : true}
-                        startIcon={<FilterAltIcon />}
+                        startIcon={<TuneIcon />}
                         onClick={handleToggleSearchModal}
                         aria-label="Abrir filtros"
                         sx={{
@@ -135,7 +123,7 @@ const TableToolbar = ({
                         Filtros
                     </Button>
                 </Box>
-            </StyledToolbar>
+            </Toolbar>
 
             {filters && <FilterModal 
                 open={openSearchModal}

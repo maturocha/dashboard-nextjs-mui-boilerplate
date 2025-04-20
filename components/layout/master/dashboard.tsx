@@ -10,6 +10,8 @@ import Drawer from "@mui/material/Drawer"
 import IconButton from "@mui/material/IconButton"
 import MenuIcon from "@mui/icons-material/Menu"
 import Sidebar from "@/components/layout/sidebar/Sidebar"
+import GlobalModal from "@/components/shared/GlobalModal"
+import { AppProvider } from "@/context/AppContext"
 
 const DRAWER_WIDTH = 280
 
@@ -35,12 +37,13 @@ export default function DashboardLayout({
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh",
-        bgcolor: "background.default",
-        overflow: "hidden", // Evita scroll horizontal no deseado
+    <AppProvider>
+      <Box
+        sx={{
+          display: "flex",
+          minHeight: "100vh",
+          bgcolor: "background.default",
+          overflow: "hidden", // Evita scroll horizontal no deseado
       }}
     >
       {/* Desktop sidebar - fixed */}
@@ -149,5 +152,7 @@ export default function DashboardLayout({
         </Box>
       </Box>
     </Box>
+    <GlobalModal />
+    </AppProvider>
   )
 }

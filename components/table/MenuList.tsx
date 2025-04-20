@@ -4,6 +4,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { MenuListProps } from '@/types/table';
+import { ListItemIcon, ListItemText } from '@mui/material';
 
 
 const MenuList: React.FC<MenuListProps> = ({ listItems }) => {
@@ -23,12 +24,11 @@ const MenuList: React.FC<MenuListProps> = ({ listItems }) => {
         <ArrowDropDownIcon />
       </IconButton>
       <Menu
-        id="simple-menu"
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleClose}
       >
-        {listItems.map(({ title, onClick }, index) => (
+        {listItems.map(({ title, icon, onClick }, index) => (
           <MenuItem
             key={index}
             onClick={() => {
@@ -36,7 +36,12 @@ const MenuList: React.FC<MenuListProps> = ({ listItems }) => {
               handleClose();
             }}
           >
-            {title}
+            <ListItemIcon>
+              {icon}
+            </ListItemIcon>
+            <ListItemText>
+              {title}
+            </ListItemText>
           </MenuItem>
         ))}
       </Menu>

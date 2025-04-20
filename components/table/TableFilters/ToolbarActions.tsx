@@ -10,7 +10,7 @@ interface ToolbarActionsProps {
 }
 
 const ToolbarActions = ({ exportButton, hasSearch, onSearch, searchTextDefault = '' }: ToolbarActionsProps) => (
-    <Box display="flex" alignItems="center" gap={1}>
+    <Box display="flex" alignItems="center">
         {exportButton && (
             <Button
                 variant="contained"

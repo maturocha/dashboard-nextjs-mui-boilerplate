@@ -49,7 +49,7 @@ export default function PageListHeader({ labels, createUrl }: PageListHeaderProp
         }}
       >
         <Box sx={{ display: { xs: "block", sm: "block" } }} >
-          {isMobile ? "Nuevo" : `Nuevo ${labels.singular}`}
+          {isMobile ? "Agregar" : `Agregar ${labels.singular}`}
         </Box>
       </Button>
     </Box>

@@ -45,6 +45,7 @@ export interface MenuListProps {
     history?: any;
     listItems: Array<{
       title: string;
+      icon?: React.ReactNode;
       onClick: () => void;
     }>;
   }
