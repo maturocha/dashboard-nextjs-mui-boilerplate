@@ -1,7 +1,8 @@
 "use client";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Alert } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useAppContext } from "@/context/AppContext";
 import { ModalType } from "@/types/app";
+import CustomButton from "./CustomButton";
 
 export default function GlobalModal() {
   const { modal, closeModal } = useAppContext();
@@ -26,31 +27,28 @@ export default function GlobalModal() {
       <DialogActions>
         {modal.type === ModalType.CONFIRM ? (
           <>
-            <Button 
+            <CustomButton
+              label="Cancelar"
               onClick={closeModal} 
               variant="outlined" 
               color="primary"
-            >
-              Cancelar
-            </Button>
-            <Button 
+            />
+            <CustomButton 
+              label="Confirmar"
               onClick={handleConfirm} 
               variant="contained" 
               color="primary" 
               autoFocus
-            >
-              Confirmar
-            </Button>
+            />
           </>
         ) : (
-          <Button 
+          <CustomButton 
+            label="Cerrar"
             onClick={closeModal} 
             variant="contained" 
             color="primary" 
             autoFocus
-          >
-            Cerrar
-          </Button>
+          />
         )}
       </DialogActions>
     </Dialog>

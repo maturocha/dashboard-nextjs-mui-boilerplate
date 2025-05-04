@@ -9,7 +9,7 @@ import {
 
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
-
+import AddIcon from "@mui/icons-material/Add"
 import MenuList from "@/components/table/MenuList";
 import { useList } from "@/hooks/useList";
 import { apiWrapper } from "@/utils/api/apiWrapper";
@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Role, api as roleApi } from "@/models/Role";
 import { useScrollPosition } from '@/hooks/useScrollPosition';
-import PageListHeader from "@/components/layout/page/PageListHeader";
+import PageHeader from "@/components/layout/page/PageHeader";
 
 const fetchUsers = async ({ page, perPage, sortBy, sortType, filters }: any) => {
   const response = await apiWrapper.get(api.list, {
@@ -144,9 +144,13 @@ export default function UsersPageList() {
     <Box sx={{ maxWidth: "100%" }}>
     {/* Header con título y botón de nuevo producto */}
     
-     <PageListHeader 
-      labels={labels} 
-      createUrl={views.create} />
+     <PageHeader 
+      title={labels.plural} 
+      cta={{
+        label: "Nuevo Usuario",
+        onClick: () => router.push(views.create),
+        icon: <AddIcon fontSize="small" />,
+      }} />
     
       {error && <Typography color="error" mb={2}>{error}</Typography>}
     

@@ -1,4 +1,4 @@
-import * as Yup from 'yup'
+import { z } from 'zod'
 
 export const api = {
   list: '/categories',
@@ -35,13 +35,13 @@ export const columnsTable = [
 export interface Category {
     id: number;
     name: string;
+    slug: string;
 }
 
 export interface FormValues {
   name: string
 }
 
-export const validationSchema = () => Yup.object().shape({
-  name: Yup.string()
-    .required('Obligatorio')
+export const validationSchema = z.object({
+  name: z.string().min(1, 'Obligatorio')
 })

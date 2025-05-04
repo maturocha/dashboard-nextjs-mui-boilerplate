@@ -15,10 +15,11 @@ import { useAppContext } from "@/context/AppContext";
 import { ModalType } from "@/types/app";
 import { useRouter } from "next/navigation";
 import { useScrollPosition } from '@/hooks/useScrollPosition';
-import PageListHeader from "@/components/layout/page/PageListHeader";
+import PageHeader from "@/components/layout/page/PageHeader";
 
 import EditIcon from "@mui/icons-material/Edit"
 import DeleteIcon from "@mui/icons-material/Delete"
+import AddIcon from "@mui/icons-material/Add"
 
 const fetchCategories = async ({ page, perPage, sortBy, sortType, filters }: any) => {
   const response = await apiWrapper.get(api.list, {
@@ -103,6 +104,20 @@ const handleDelete = async (category: Category) => {
         {category.name}
       </Box>
     ),
+    slug: (
+      <Box sx={{ 
+        minWidth: '150px',
+        maxWidth: '250px',
+        px: 1,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }}>
+        <a href={`${process.env.NEXT_PUBLIC_STORE_API}/categoria/${category.slug}`} target="_blank">
+          /{category.slug}
+        </a>
+      </Box>
+    ),
     actions: (
       <Box sx={{ 
         minWidth: '80px',
@@ -132,9 +147,14 @@ const handleDelete = async (category: Category) => {
     <Box sx={{ maxWidth: "100%" }}>
     {/* Header con título y botón de nuevo producto */}
     
-     <PageListHeader 
-      labels={labels} 
-      createUrl={views.create} />
+     <PageHeader
+      title={labels.plural}
+      subtitle="Gestión de categorías"
+      cta={{
+        label: `Crear ${labels.singular}`,
+        onClick: () => router.push(views.create),
+        icon: <AddIcon fontSize="small" />
+      }} />
     {error && <Typography color="error" mb={2}>{error}</Typography>}
     <Box sx={{ width: "100%", overflowX: "auto" }}>
         <Table

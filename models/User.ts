@@ -1,4 +1,4 @@
-import * as Yup from 'yup'
+import { z } from 'zod'
 
 export const api = {
   list: '/users',
@@ -43,22 +43,23 @@ export interface User {
 export interface FormValues {
   name: string
   email: string
-  role_id: number|string
+  role_id: number
   cel?: string
   password?: string
 }
 
-export const validationSchema = (isCreating: boolean) => Yup.object().shape({
-  name: Yup.string()
-    .required('Obligatorio'),
-  email: Yup.string()
-    .email('Email inválido')
-    .required('Obligatorio'),
-  role_id: Yup.number()
-    .required('Obligatorio'),
-  cel: Yup.string()
-    .nullable(),
-  password: isCreating 
-    ? Yup.string().required('Obligatorio')
-    : Yup.string(),
+const baseSchema = z.object({
+  name: z.string().min(1, 'Obligatorio'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  role_id: z.number().int('Rol inválido'),
+  cel: z.string().optional(),
+})
+
+// Schema para create (usa todo tal cual)
+export const schemaCreate = baseSchema
+
+// Schema para edit (password opcional)
+export const schemaUpdate = baseSchema.extend({
+  password: z.string().min(6, 'Mínimo 6 caracteres').optional(),
 })
