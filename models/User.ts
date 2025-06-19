@@ -49,17 +49,47 @@ export interface FormValues {
 }
 
 const baseSchema = z.object({
-  name: z.string().min(1, 'Obligatorio'),
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
-  role_id: z.number().int('Rol inválido'),
-  cel: z.string().optional(),
+  name: z
+    .string()
+    .min(1, 'El nombre es obligatorio')
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre no puede exceder los 100 caracteres')
+    .trim(),
+  email: z
+    .string()
+    .min(1, 'El email es obligatorio')
+    .email('Formato de email inválido')
+    .max(255, 'El email no puede exceder los 255 caracteres')
+    .trim()
+    .toLowerCase(),
+  password: z
+    .string()
+    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .max(255, 'La contraseña no puede exceder los 255 caracteres'),
+  role_id: z
+    .number()
+    .int('El rol debe ser un número entero')
+    .positive('Debe seleccionar un rol válido'),
+  cel: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.length >= 7, {
+      message: 'El celular debe tener al menos 7 dígitos'
+    })
+    .refine((val) => !val || /^[0-9+\-\s()]+$/.test(val), {
+      message: 'El celular solo puede contener números, espacios, guiones y paréntesis'
+    }),
 })
 
-// Schema para create (usa todo tal cual)
+// Schema para create (password obligatorio)
 export const schemaCreate = baseSchema
 
 // Schema para edit (password opcional)
 export const schemaUpdate = baseSchema.extend({
-  password: z.string().min(6, 'Mínimo 6 caracteres').optional(),
+  password: z
+    .string()
+    .min(6, 'La contraseña debe tener al menos 6 caracteres')
+    .max(255, 'La contraseña no puede exceder los 255 caracteres')
+    .optional()
+    .or(z.literal('')), // Permite string vacío
 })

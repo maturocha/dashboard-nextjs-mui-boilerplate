@@ -40,7 +40,7 @@ export default function CategoriesPageList() {
   const {
     loading,
     error,
-    data: users,
+    data: categories,
     pagination,
     setPagination,
     sorting,
@@ -59,14 +59,14 @@ export default function CategoriesPageList() {
   const { openModal, showToast } = useAppContext();
 
   const { saveScrollPosition } = useScrollPosition({
-    key: 'usersListScrollPosition',
-    dependencies: [loading, users],
-    isReady: !loading && users.length > 0
+    key: 'categoriesListScrollPosition',
+    dependencies: [loading, categories],
+    isReady: !loading && categories.length > 0
   });
 
-  const handleEdit = (userId: string) => {
+  const handleEdit = (categoryId: string) => {
     saveScrollPosition();
-    router.push(views.update.replace(":id", userId));
+    router.push(views.update.replace(":id", categoryId));
   };
 
 const handleDelete = async (category: Category) => {
@@ -91,7 +91,7 @@ const handleDelete = async (category: Category) => {
 
   const columns = columnsTable;
 
-  const transformedData = users.map((category: Category) => ({
+  const transformedData = categories.map((category: Category) => ({
     name: (
       <Box sx={{ 
         minWidth: '150px',

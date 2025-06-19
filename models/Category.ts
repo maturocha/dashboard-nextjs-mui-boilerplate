@@ -26,6 +26,11 @@ export const columnsTable = [
         sort: true
       },
       {
+        name: 'Slug',
+        property: 'slug',
+        sort: false
+      },
+      {
         name: 'Acciones',
         property: 'actions',
         sort: false
@@ -43,5 +48,13 @@ export interface FormValues {
 }
 
 export const validationSchema = z.object({
-  name: z.string().min(1, 'Obligatorio')
+  name: z
+    .string()
+    .min(1, 'El nombre es obligatorio')
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre no puede exceder los 100 caracteres')
+    .trim()
+    .refine((value) => value.length > 0, {
+      message: 'El nombre no puede estar vacío'
+    })
 })

@@ -6,7 +6,6 @@ import { Box, Typography, Container, CircularProgress } from '@mui/material'
 import { CategoryForm } from '@/app/(dashboard)/admin/categorias/_components/Form'
 import { FormValues, Category, api, views } from '@/models/Category'
 import { apiWrapper } from '@/utils/api/apiWrapper'
-import { FormikHelpers } from 'formik'
 import { useAppContext } from '@/context/AppContext'
 import { labels } from '@/models/Category';
 
@@ -24,8 +23,8 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
         console.log(response);
         setCategory(response)
       } catch (error: any) {
-        setError('Error al cargar el usuario')
-        showToast('Error al cargar el usuario', 'error')
+        setError('Error al cargar la categoría')
+        showToast('Error al cargar la categoría', 'error')
       } finally {
         setLoading(false)
       }
@@ -34,26 +33,16 @@ export default function EditCategoryPage({ params }: { params: { id: string } })
     fetchCategory()
   }, [params.id, showToast])
 
-  const handleSubmit = async (
-    values: FormValues,
-    formikHelpers: FormikHelpers<FormValues>
-  ) => {
-    const { setSubmitting, setErrors } = formikHelpers
-    
+  const handleSubmit = async (values: FormValues) => {
     try {
-      setSubmitting(true)
-      
       const response = await apiWrapper.put(api.update.replace(':id', params.id), values)
 
       showToast(`${labels.singular} ${response.name} actualizada correctamente`, 'success')
       router.push(views.list)
       
     } catch (error: any) {
-      const errors = error.errors || { general: 'Error al actualizar' }
       showToast('Error en la actualización', 'error')
-      setErrors(errors)
-    } finally {
-      setSubmitting(false)
+      throw error // Re-lanzar el error para que React Hook Form lo maneje
     }
   }
 
