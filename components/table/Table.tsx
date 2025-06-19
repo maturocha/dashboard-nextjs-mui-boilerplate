@@ -165,50 +165,26 @@ const Table = ({
               {data.length > 0 && (
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={columns.length} sx={{ p: 0 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.01)",
-                          borderTop:
-                            theme.palette.mode === "dark" ? "1px solid rgba(255, 255, 255, 0.05)" : "1px solid rgba(0, 0, 0, 0.05)",
-                        }}
-                      >
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary" 
-                          sx={{ 
-                            pl: 2, 
-                            py: 1,
-                            display: { xs: "none", sm: "block" } 
-                          }}
-                        >
-                          Total: {data.length} items
-                        </Typography>
-                        <TablePagination
-                          rowsPerPageOptions={[5, 10, 20, 50, 100]}
-                          colSpan={columns.length}
-                          count={total}
-                          page={page - 1}
-                          rowsPerPage={perPage}
-                          onPageChange={handleChangePage}
-                          onRowsPerPageChange={handleChangeRowsPerPage}
-                          labelRowsPerPage={isTablet ? "Filas:" : "Filas por página:"}
-                          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-                          sx={{
-                            border: 0,
-                            '& .MuiTablePagination-selectLabel': {
-                              mt: 0.5,
-                            },
-                            '& .MuiTablePagination-displayedRows': {
-                              mt: 0.5,
-                            }
-                          }}
-                        />
-                      </Box>
-                    </TableCell>
+                    <TablePagination
+                      rowsPerPageOptions={total > 20 ? [10, 20, 50, 100] : []}
+                      colSpan={columns.length}
+                      count={total}
+                      page={page - 1}
+                      rowsPerPage={perPage}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      labelRowsPerPage={isTablet ? "Filas:" : "Filas por página:"}
+                      labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+                      sx={{
+                        border: 0,
+                        '& .MuiTablePagination-selectLabel': {
+                          mt: 0.5,
+                        },
+                        '& .MuiTablePagination-displayedRows': {
+                          mt: 0.5,
+                        }
+                      }}
+                    />
                   </TableRow>
                 </TableFooter>
               )}

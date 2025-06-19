@@ -23,7 +23,8 @@ export const CategoryForm = ({ values, handleSubmit }: FormProps) => {
   const {
     register,
     handleSubmit: handleFormSubmit,
-    formState: { errors, isSubmitting, isValid, isDirty }
+    formState: { errors, isSubmitting, isValid, isDirty },
+    setError
   } = useForm<FormValues>({
     resolver: zodResolver(validationSchema),
     defaultValues: values,
@@ -33,8 +34,24 @@ export const CategoryForm = ({ values, handleSubmit }: FormProps) => {
   const onSubmit = async (data: FormValues) => {
     try {
       await handleSubmit(data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting form:', error)
+      
+      // Manejar errores específicos del servidor si existen
+      if (error.errors) {
+        Object.entries(error.errors).forEach(([field, message]) => {
+          setError(field as keyof FormValues, {
+            type: 'server',
+            message: message as string
+          })
+        })
+      } else {
+        // Error general
+        setError('root', {
+          type: 'server',
+          message: 'Error al procesar la solicitud'
+        })
+      }
     }
   }
 
@@ -50,11 +67,12 @@ export const CategoryForm = ({ values, handleSubmit }: FormProps) => {
             helperText={errors.name?.message}
             required
             disabled={isSubmitting}
+            autoFocus
           />
         </Grid>
       </Grid>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
         <CustomButton
           label="Cancelar"
           onClick={() => router.back()}

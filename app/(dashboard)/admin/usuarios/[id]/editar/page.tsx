@@ -6,7 +6,6 @@ import { Box, Typography, Container, CircularProgress } from '@mui/material'
 import { UserForm } from '@/app/(dashboard)/admin/usuarios/_components/Form'
 import { FormValues, User, api, views } from '@/models/User'
 import { apiWrapper } from '@/utils/api/apiWrapper'
-import { FormikHelpers } from 'formik'
 import { useAppContext } from '@/context/AppContext'
 
 export default function EditUserPage({ params }: { params: { id: string } }) {
@@ -33,26 +32,16 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
     fetchUser()
   }, [params.id, showToast])
 
-  const handleSubmit = async (
-    values: FormValues,
-    formikHelpers: FormikHelpers<FormValues>
-  ) => {
-    const { setSubmitting, setErrors } = formikHelpers
-    
+  const handleSubmit = async (values: FormValues) => {
     try {
-      setSubmitting(true)
-      
       const response = await apiWrapper.put(api.update.replace(':id', params.id), values)
 
       showToast(`Usuario ${response.name} actualizado correctamente`, 'success')
       router.push(views.list)
       
     } catch (error: any) {
-      const errors = error.errors || { general: 'Error al actualizar el usuario' }
       showToast('Error al actualizar el usuario', 'error')
-      setErrors(errors)
-    } finally {
-      setSubmitting(false)
+      throw error // Re-lanzar el error para que React Hook Form lo maneje
     }
   }
 

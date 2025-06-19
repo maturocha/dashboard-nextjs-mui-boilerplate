@@ -34,11 +34,12 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
   const {
     register,
     handleSubmit: handleFormSubmit,
-    formState: { errors, isSubmitting },
-    watch
+    formState: { errors, isSubmitting, isValid, isDirty },
+    setError
   } = useForm<FormValues>({
     resolver: zodResolver(validationSchema),
-    defaultValues: values
+    defaultValues: values,
+    mode: 'onChange'
   })
 
   useEffect(() => {
@@ -57,8 +58,24 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
   const onSubmit = async (data: FormValues) => {
     try {
       await handleSubmit(data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting form:', error)
+      
+      // Manejar errores específicos del servidor si existen
+      if (error.errors) {
+        Object.entries(error.errors).forEach(([field, message]) => {
+          setError(field as keyof FormValues, {
+            type: 'server',
+            message: message as string
+          })
+        })
+      } else {
+        // Error general
+        setError('root', {
+          type: 'server',
+          message: 'Error al procesar la solicitud'
+        })
+      }
     }
   }
 
@@ -73,6 +90,8 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
             error={!!errors.name}
             helperText={errors.name?.message}
             required
+            disabled={isSubmitting}
+            autoFocus
           />
         </Grid>
 
@@ -80,7 +99,7 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
           <FormControl 
             fullWidth 
             error={!!errors.role_id}
-            disabled={!roles}
+            disabled={!roles || isSubmitting}
             variant="outlined"
             sx={{
               '& .MuiOutlinedInput-notchedOutline': {
@@ -108,9 +127,9 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
             <Select
               labelId="role-label"
               label="Rol *"
-              {...register('role_id')}
+              {...register('role_id', { valueAsNumber: true })}
               required
-              disabled={!roles}
+              disabled={!roles || isSubmitting}
             >
               {roles && roles?.map((role) => (
                 <MenuItem key={role.id} value={role.id}>
@@ -136,6 +155,7 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
             error={!!errors.email}
             helperText={errors.email?.message}
             required
+            disabled={isSubmitting}
           />
         </Grid>
 
@@ -147,6 +167,7 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
             {...register('cel')}
             error={!!errors.cel}
             helperText={errors.cel?.message}
+            disabled={isSubmitting}
             inputProps={{
               'aria-label': 'Número de celular',
             }}
@@ -163,6 +184,7 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
               error={!!errors.password}
               helperText={errors.password?.message}
               required
+              disabled={isSubmitting}
             />
           </Grid>
         )}
@@ -174,13 +196,14 @@ export const UserForm = ({ values, isCreating = false, handleSubmit }: FormProps
           onClick={() => router.back()}
           variant="outlined"
           color="primary"
+          disabled={isSubmitting}
         />
         <CustomButton
           label={isSubmitting ? 'Guardando...' : 'Guardar'}
           type="submit"
           variant="contained"
           color="primary"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isValid || !isDirty}
         />
       </Box>
     </form>

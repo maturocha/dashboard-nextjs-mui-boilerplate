@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, Typography, Container } from '@mui/material'
 import { UserForm } from '@/app/(dashboard)/admin/usuarios/_components/Form'
@@ -19,28 +18,20 @@ const defaultValues: FormValues = {
 }
 
 export default function CreateUserPage() {
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { showToast } = useAppContext();
 
-  const handleSubmit = async (
-    values: FormValues,
-  ) => {
-    
+  const handleSubmit = async (values: FormValues) => {
     try {
-      setLoading(true);
-      
       const response = await apiWrapper.post(api.create, values);
 
       showToast(`Usuario ${response.name} creado correctamente`, 'success');
       router.push(views.list);
       
     } catch (error: any) {
-      const errors = error.errors || { general: 'Error al crear el usuario' };
       showToast('Error al crear el usuario', 'error');
-      console.error(errors);
-    } finally {
-      setLoading(false);
+      console.error(error);
+      throw error // Re-lanzar el error para que React Hook Form lo maneje
     }
   }
 
